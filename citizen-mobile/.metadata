@@ -1,0 +1,4 @@
+version:
+  revision: "local-template-render"
+  channel: "stable"
+project_type: app
