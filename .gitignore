@@ -1,0 +1,15 @@
+node_modules/
+dist/
+build/
+.dart_tool/
+.flutter-plugins-dependencies
+.gradle/
+local.properties
+*.iml
+.env
+.env.*
+!.env.example
+dev-mock/data/
+test-results/
+playwright-report/
+*.log
