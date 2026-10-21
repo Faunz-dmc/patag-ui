@@ -1,0 +1,13 @@
+# PATAG design system
+
+Brand authority: all seven brandsheet pages. Ink #182B49, tangerine #F26A32, paper #F7F1EB, white #FFFFFF, charcoal #26313B, slate #6C7783. Darker supporting text is used where the supplied slate would miss contrast on warm paper. Semantic status fills stay subordinate to ink/tangerine and carry text. The orange button uses navy text for readable contrast.
+
+Lilita One is bundled locally for wordmark/display headlines; Arial is the web body face. Android requests Arial and uses the system sans fallback where Arial is absent; a licensed Arial mobile font is not redistributed. Wordmark is cropped from brandsheet page 1, with background transparency; the first A is the official cone character, second A stays a letter. Mascot is the supplied export with background made transparent. No mascot was redrawn or generated. Dark sidebar wordmark is a white silhouette derived from that source.
+
+Grid: 244px desktop sidebar, fluid content with 36px gutters, 20px panel gaps, larger map / narrower queue, aligned panel edges. At <=900px sidebar folds; at <=650px content stacks. Page text scale 11/12/14/16/18/32; figures 36, regular weight. White panels have a single subtle border and no resting shadow. Flat surfaces only. Buttons and fields have visible focus. Overlays use a shadow and native dialog focus behavior. Chart bars use one brand hue; no entrance animation; tick density adapts to available width.
+
+Native uses ink welcome/hero surfaces, paper supporting sections, tangerine actions, Lilita One display, official mascot, SafeArea and Material navigation. Reporting has a persistent bottom action bar and saved drafts.
+
+Taste app direction: editorial-greeting, seed 2097961637, no redraw. Brand overrides generic sidebar/palette guidance because the authoritative prompt requires navy navigation and exact PATAG colors. Signature element: report-to-repair evidence and verification handoff, plus the cone A character. Source lint passes with one intentional time-series date-string warning. Browser screenshots were inspected and chart animation/tick collision fixed. The separate skill inspector is best run outside sandbox against the retained dev server; project-local browser checks supply actual screenshots and overflow data here.
+
+Fictional dataset: 12 initial road cases in Guinhawa, San Agustin, Santisima Trinidad, Mojon, Longos, Bulihan and Mabolo, Malolos. Crew Alpha/Bravo and all accounts are fictional. Illustrated fixture evidence is marked in the UI; live reports and completion submissions require uploaded raster images. Dashboard totals derive from records. Browser QA adds a clearly named Workflow Test Road case only in its isolated in-memory test server.
