@@ -10,7 +10,7 @@
 - Dashboard widths: 320, 375, 390, 430, 768, 1024, 1280, 1366, 1440 and 1920 on both portals. No document-level horizontal overflow. Separate 390px report-table screenshot confirms internal table scrolling.
 - No JavaScript page exceptions and no browser console errors in the latest run. See `browser-results.json` for actual observations.
 - CSV data escaped and generated PDF signature validated from browser export blobs. PDF rendered with Poppler and visually reviewed: readable columns, pagination and explicit fictional-data label. Browser native download file writes were canceled by the sandbox; generated blobs were saved by the test runner instead.
-- Screenshot review at desktop and phone widths. Fixed animated chart snapshots, colliding mobile date ticks, secondary metric captions and undersized labels; retested. Screenshots are in `screenshots/`.
+- Screenshot review at desktop and phone widths. Fixed animated chart snapshots, colliding mobile date ticks, secondary metric captions and undersized labels. A final table-page screenshot exposed an absolutely positioned accessibility label escaping its scrolling container; containing/anchoring the label fixes the overflow, and the harness now asserts the table page width as well. Screenshots are in `screenshots/`.
 - Taste source lint: 0 failures. Intentional warnings: time-series dates resemble decorative numbering; toast/dialog shadows are overlays; em dashes occur in evidence labels and data punctuation.
 
 ## Unavailable or incomplete
