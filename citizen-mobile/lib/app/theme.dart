@@ -1,3 +1,13 @@
 import 'package:flutter/material.dart';
 const ink=Color(0xFF182B49), orange=Color(0xFFF26A32), paper=Color(0xFFF7F1EB), slate=Color(0xFF606C79);
-ThemeData patagTheme()=>ThemeData(useMaterial3:true, scaffoldBackgroundColor:paper, fontFamily:'Arial', colorScheme:ColorScheme.fromSeed(seedColor:ink,primary:ink,secondary:orange,surface:Colors.white),appBarTheme:const AppBarTheme(backgroundColor:paper,foregroundColor:ink,centerTitle:false),textTheme:const TextTheme(headlineLarge:TextStyle(fontFamily:'Lilita One',fontSize:40,color:ink,height:1.05),headlineMedium:TextStyle(fontFamily:'Lilita One',fontSize:30,color:ink,height:1.15),bodyMedium:TextStyle(fontSize:14,height:1.5,color:ink)),inputDecorationTheme:InputDecorationTheme(filled:true,fillColor:Colors.white,border:OutlineInputBorder(borderRadius:BorderRadius.circular(12)),contentPadding:const EdgeInsets.all(16)),filledButtonTheme:FilledButtonThemeData(style:FilledButton.styleFrom(backgroundColor:orange,foregroundColor:ink,minimumSize:const Size(48,50),shape:RoundedRectangleBorder(borderRadius:BorderRadius.circular(12)),textStyle:const TextStyle(fontWeight:FontWeight.bold,fontSize:14))),cardTheme:CardThemeData(color:Colors.white,elevation:0,margin:const EdgeInsets.only(bottom:16),shape:RoundedRectangleBorder(borderRadius:BorderRadius.circular(20))),navigationBarTheme:const NavigationBarThemeData(backgroundColor:Colors.white,indicatorColor:Color(0xFFFEE8DD)));
+ThemeData patagTheme()=>ThemeData(useMaterial3:true, scaffoldBackgroundColor:paper, fontFamily:'Arial', colorScheme:ColorScheme.fromSeed(seedColor:ink,
+primary:ink,secondary:orange,surface:Colors.white),appBarTheme:const AppBarTheme(backgroundColor:paper,foregroundColor:ink,
+centerTitle:false),textTheme:const TextTheme(headlineLarge:TextStyle(fontFamily:'Lilita One',fontSize:40,
+color:ink,height:1.05),headlineMedium:TextStyle(fontFamily:'Lilita One',fontSize:30,color:ink,height:1.15),
+bodyMedium:TextStyle(fontSize:14,height:1.5,color:ink)),inputDecorationTheme:InputDecorationTheme(filled:true,
+fillColor:Colors.white,border:OutlineInputBorder(borderRadius:BorderRadius.circular(12)),contentPadding:const EdgeInsets.all(16)),
+filledButtonTheme:FilledButtonThemeData(style:FilledButton.styleFrom(backgroundColor:orange,foregroundColor:ink,
+minimumSize:const Size(48,50),shape:RoundedRectangleBorder(borderRadius:BorderRadius.circular(12)),textStyle:const TextStyle(fontWeight:FontWeight.bold,
+fontSize:14))),cardTheme:CardThemeData(color:Colors.white,elevation:0,margin:const EdgeInsets.only(bottom:16),
+shape:RoundedRectangleBorder(borderRadius:BorderRadius.circular(20))),navigationBarTheme:const NavigationBarThemeData(backgroundColor:Colors.white,
+indicatorColor:Color(0xFFFEE8DD)));

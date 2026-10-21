@@ -1,0 +1,7 @@
+{
+  "tool": "Tree-sitter Dart WASM syntax parser",
+  "files": 12,
+  "syntaxErrors": [],
+  "nativeAnalysis": "NOT RUN \u2014 Flutter/Dart runtime access failure",
+  "nativeBuild": "NOT RUN"
+}

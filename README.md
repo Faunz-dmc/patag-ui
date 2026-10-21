@@ -116,7 +116,7 @@ See `docs/requirements-matrix.md`, `docs/screen-inventory.md`, `docs/api-contrac
 
 ## GitHub
 
-GitHub MCP returned account `lee-creatives` and no accessible repositories. It exposes no repository-creation tool in this session; the account-scoped repository search also returned 422. No remote repository or push was completed. Local Git history is prepared. After installing/authenticating GitHub CLI with permission to create a private repository:
+GitHub MCP returned account `lee-creatives` and no accessible repositories. It exposes no repository-creation tool in this session; the account-scoped repository search also returned 422. No remote repository or push was completed. Local Git history is prepared. The source ZIP contains tracked files only; the companion `PATAG-history.bundle` preserves the commits and can be cloned with `git clone .\PATAG-history.bundle PATAG-with-history`. If using the ZIP without that bundle, run `git init -b main`, `git add .`, and `git commit -m "Initial PATAG source"` first. After installing/authenticating GitHub CLI with permission to create a private repository:
 
 ```powershell
 gh auth login

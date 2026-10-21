@@ -1,1 +1,1 @@
-export const role: 'admin'|'maintenance'='admin';
+export const role: "admin" | "maintenance" = "admin";

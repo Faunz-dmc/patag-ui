@@ -269,10 +269,13 @@
     }
   ],
   "errors": [],
+  "consoleErrors": [],
   "workflows": [
     "Admin search and severity filtering",
     "Admin verified and assigned API-created citizen report",
     "CSV and PDF export blobs validated; native browser file writes are canceled by this sandbox",
+    "Mobile sidebar navigation, scrollable report table, map zoom/recenter and marker popup",
+    "Maintenance route guard blocks admin user-management view",
     "Maintenance started work, saved progress, uploaded a photo and submitted completion",
     "Admin resolved repair; citizen API received history/notification and submitted feedback"
   ]

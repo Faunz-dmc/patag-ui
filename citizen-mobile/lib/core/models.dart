@@ -1,11 +1,20 @@
-const reportStatuses = ['Submitted', 'Under Review', 'Verified', 'Assigned', 'In Progress', 'Resolved', 'Rejected', 'Duplicate'];
-enum Role { citizen, admin, maintenance }
-enum Severity { low, medium, high }
+const reportStatuses = ['Submitted', 'Under Review', 'Verified', 'Assigned', 'In Progress', 'Resolved', 'Rejected',
+'Duplicate'];
+enum Role {
+  citizen, admin, maintenance
+}
+enum Severity {
+  low, medium, high
+}
 class Coordinates {
   final double lat, lng;
   const Coordinates(this.lat, this.lng);
-  factory Coordinates.fromJson(Map<String, dynamic> json) => Coordinates((json['lat'] as num).toDouble(), (json['lng'] as num).toDouble());
-  Map<String, dynamic> toJson() => {'lat': lat, 'lng': lng};
+  factory Coordinates.fromJson(Map<String, dynamic> json) => Coordinates((json['lat'] as num).toDouble(),
+  (json['lng'] as num).toDouble());
+  Map<String, dynamic> toJson() => {
+    'lat': lat, 'lng': lng
+  }
+  ;
   bool get isValid => lat.isFinite && lng.isFinite && lat.abs() <= 90 && lng.abs() <= 180;
 }
 class PotholeReport {
