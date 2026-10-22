@@ -97,7 +97,7 @@ class PatagStore extends ChangeNotifier {
     }
     ));
   }
-  String photoUrl(String path) => baseUrl.replaceFirst(RegExp(r'/api$'), '')+'/api'+path;
+  String photoUrl(String path) => '${baseUrl.replaceFirst(RegExp(r'/api$'), '')}/api$path';
   Future<void> logout() async {
     try {
       await call('/auth/logout',body:{

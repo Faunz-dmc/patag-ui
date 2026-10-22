@@ -69,6 +69,7 @@ import { request, asset, upload } from "./api";
 import { role } from "./config";
 import "leaflet/dist/leaflet.css";
 import "./styles/app.css";
+import "./styles/premium.css";
 
 const admin = role === "admin",
   base = admin ? "/admin" : "/maintenance";
@@ -460,8 +461,8 @@ function Shell() {
       <a className="skip-link" href="#main">
         Skip to content
       </a>
-      <div className="shell">
-        <aside className={menu ? "sidebar open" : "sidebar"}>
+      <div className={menu ? "shell menu-expanded" : "shell"}>
+        <aside aria-label="Workspace navigation" className={menu ? "sidebar open" : "sidebar"}>
           <Link to={base + "/dashboard"} aria-label="PATAG overview">
             <Logo />
           </Link>
@@ -477,7 +478,7 @@ function Shell() {
           <p className="nav-label">Workspace</p>
           <nav aria-label="Main navigation">
             {navigation.map(([path, label, Icon]) => (
-              <NavLink key={String(path)} to={base + "/" + path}>
+              <NavLink key={String(path)} title={String(label)} aria-label={String(label)} to={base + "/" + path}>
                 <Icon size={18} />
                 <span>{String(label)}</span>
                 {path === "verification" && (
@@ -493,7 +494,7 @@ function Shell() {
             ))}
           </nav>
           <div className="nav-bottom">
-            <NavLink to={base + "/notifications"}>
+            <NavLink title="Notifications" aria-label="Notifications" to={base + "/notifications"}>
               <Bell size={18} />
               Notifications
               {localStorage.getItem("patag-notification-preference") !==
@@ -502,7 +503,7 @@ function Shell() {
                   <span className="unread-dot" />
                 )}
             </NavLink>
-            <NavLink to={base + (admin ? "/settings" : "/profile")}>
+            <NavLink title="Profile and settings" aria-label="Profile and settings" to={base + (admin ? "/settings" : "/profile")}>
               <Settings size={18} />
               {admin ? "Settings" : "Profile & settings"}
             </NavLink>
@@ -544,13 +545,11 @@ function Shell() {
             >
               {menu ? <X size={22} /> : <Menu size={22} />}
             </button>
-            <span>
-              <span className="live-dot" />
-              Local demonstration <span className="topbar-divider">/</span>
-              <span className="muted">
-                {admin ? "LGU portal" : "Maintenance portal"}
-              </span>
-            </span>
+            <Link className="topbar-brand" to={base + '/dashboard'} aria-label="PATAG home"><Logo /></Link>
+            <nav className="topnav" aria-label="Primary workspace">
+              {(admin ? [['dashboard','Overview'],['reports','Reports'],['assignments','Assignments'],['analytics','Analytics']] : [['dashboard','Overview'],['assignments','My tasks'],['map','Task map'],['history','History']]).map(([path,label])=><NavLink key={path} to={base+'/'+path}>{label}</NavLink>)}
+            </nav>
+            <span className="workspace-caption">{admin ? 'Malolos · LGU' : 'Road Crew Alpha'}</span>
             <Link to={base + "/notifications"} className="notification-link">
               <Bell size={18} />
               <span>Activity</span>
@@ -916,134 +915,32 @@ function SmallReports({ reports }: { reports: Report[] }) {
   );
 }
 function Dashboard() {
-  const { data } = useData();
-  const rs = data.reports,
-    pending = rs.filter((r) =>
-      admin
-        ? ["Submitted", "Under Review"].includes(r.status)
-        : ["Assigned", "In Progress"].includes(r.status),
-    ),
-    high = rs.filter(
-      (r) =>
-        r.severity === "High" &&
-        !["Resolved", "Rejected", "Duplicate"].includes(r.status),
-    );
-  return (
-    <>
-      <Header
-        title={
-          admin ? "Every report. A road forward." : "Make way for better roads."
-        }
-        description={
-          admin
-            ? `${pending.length} reports need a closer look. Start with the highest-priority roads.`
-            : `${pending.length} active tasks for your crew. Check the site, document the work, keep people moving.`
-        }
-        action={
-          <Link
-            className="primary"
-            to={base + (admin ? "/verification" : "/assignments")}
-          >
-            {admin ? "Review reports" : "View my tasks"}
-            <ArrowRight size={16} />
-          </Link>
-        }
-      />
-      <Stats reports={rs} />
-      {admin && (
-        <div className="workflow-counts">
-          {["Verified", "Assigned", "Rejected", "Duplicate"].map((status) => (
-            <Link
-              key={status}
-              to={base + "/reports?status=" + encodeURIComponent(status)}
-            >
-              <span>{status}</span>
-              <strong>{rs.filter((r) => r.status === status).length}</strong>
-              <ArrowUpRight size={13} />
-            </Link>
-          ))}
-        </div>
-      )}
-      <div className="dashboard-grid">
-        <Panel
-          title={
-            admin ? "Road conditions at a glance" : "Your repair locations"
-          }
-          aside={
-            <Link to={base + "/map"}>
-              Open map <ArrowUpRight size={14} />
-            </Link>
-          }
-          className="map-panel"
-        >
-          <ReportMap reports={admin ? rs : pending} height={310} />
-          <div className="map-legend">
-            <span>
-              <i className="navy-dot" />
-              Reported road damage
-            </span>
-            <span>
-              <i className="orange-dot" />
-              High severity
-            </span>
-            <span>
-              <i className="green-dot" />
-              Resolved
-            </span>
-          </div>
-        </Panel>
-        <Panel
-          title={admin ? "Needs your review" : "Your next repair tasks"}
-          aside={<span className="count">{pending.length}</span>}
-        >
-          <SmallReports reports={pending.slice(0, 3)} />
-          <Link
-            className="panel-bottom"
-            to={base + (admin ? "/verification" : "/assignments")}
-          >
-            {admin ? "Open verification queue" : "See all assignments"}
-            <ArrowRight size={15} />
-          </Link>
-        </Panel>
-        <Panel
-          title="Reports over time"
-          aside={<span className="muted">October 2026 · demo</span>}
-        >
-          <Chart reports={rs} kind="time" />
-        </Panel>
-        <Panel
-          title="Priority roads"
-          aside={<span className="muted">High severity</span>}
-        >
-          <SmallReports reports={high.slice(0, 2)} />
-        </Panel>
-        {admin && (
-          <>
-            <Panel title="Reports by status">
-              <Chart reports={rs} />
-            </Panel>
-            <Panel title="Reported severity">
-              <Chart reports={rs} kind="severity" />
-            </Panel>
-            <Panel title="Barangay distribution" className="full-row">
-              <Chart reports={rs} kind="area" />
-            </Panel>
-          </>
-        )}
-      </div>
-      <section className="community-strip">
-        <img src="/assets/patag-mascot.png" alt="" />
-        <div>
-          <h2>I-tag ang lubak. Tungo sa patag.</h2>
-          <p>Clear evidence. The right team. Progress everyone can follow.</p>
-        </div>
-        <Link to={base + (admin ? "/analytics" : "/history")}>
-          See the progress
-          <ArrowUpRight size={17} />
-        </Link>
-      </section>
-    </>
-  );
+  const {data}=useData();
+  const rs=data.reports;
+  const pending=rs.filter(r=>admin?['Submitted','Under Review'].includes(r.status):['Assigned','In Progress'].includes(r.status));
+  const high=rs.filter(r=>r.severity==='High'&&!['Resolved','Rejected','Duplicate'].includes(r.status));
+  const awaiting=rs.filter(r=>r.completion?.state==='Awaiting Verification');
+  const verified=rs.filter(r=>r.status==='Verified');
+  const resolved=rs.filter(r=>r.status==='Resolved').length;
+  const working=rs.filter(r=>r.status==='In Progress').length;
+  const next=[...pending].sort((a,b)=>Number(b.severity==='High')-Number(a.severity==='High'))[0];
+  const metricRows=admin?[['Pending review',pending.length,'verification'],['In progress',working,'reports?status=In%20Progress'],['Resolved',resolved,'reports?status=Resolved']]:[['Assigned',rs.filter(r=>r.status==='Assigned').length,'assignments'],['In progress',working,'progress'],['Awaiting review',awaiting.length,'submissions']];
+  return <div className={'premium-overview '+(admin?'admin-overview':'crew-overview')}>
+    <Header title={admin?'Roads overview':'Your day on the road'} description={admin?pending.length+' reports need your review. Let’s keep Malolos moving.':pending.length+' active tasks. Clear priorities for your next repair.'} action={<Link className="primary" to={base+(admin?'/verification':'/assignments')}>{admin?'Review reports':'View my tasks'}<ArrowUpRight size={17}/></Link>}/>
+    <section className="overview-summary" aria-label="Report summary">
+      <Link className="summary-lead" to={base+(admin?'/reports':'/history')}><span>{admin?'Community reports':'Verified repairs'}</span><div><strong>{admin?rs.length:resolved}</strong><ArrowUpRight size={23}/></div><small>{admin?'Every tag is a road toward change.':'Completed and confirmed by the LGU.'}</small></Link>
+      {metricRows.map(([label,value,route])=><Link className="summary-metric" key={label} to={base+'/'+route}><span>{label}</span><strong>{value}</strong><small>View {String(label).toLowerCase()}<ArrowUpRight size={14}/></small></Link>)}
+    </section>
+    <div className="operations-grid">
+      <Panel title={admin?'The action desk':'Your next task'} aside={<span className="count">{pending.length} active</span>} className={admin?'action-desk':'next-task-panel'}>
+        {admin?<><div className="action-shortcuts"><Link to={base+'/verification'}><span>Verify reports</span><strong>{pending.length}</strong><ArrowRight size={17}/></Link><Link to={base+'/assignments'}><span>Ready for a crew</span><strong>{verified.length}</strong><ArrowRight size={17}/></Link><Link to={base+'/completions'}><span>Approve repairs</span><strong>{awaiting.length}</strong><ArrowRight size={17}/></Link></div><SmallReports reports={pending.slice(0,2)}/></>:next?<div className="next-task"><div className="next-task-heading"><Badge value={next.severity}/><span>{next.id}</span></div><h2>{next.location.road}</h2><p><MapPin size={16}/>Brgy. {next.location.barangay}, {next.location.city}</p><div className="next-task-status"><Badge value={next.status}/><span>Assigned to your crew</span></div><Link className="primary" to={base+'/assignments/'+next.id}>Open task<ArrowUpRight size={17}/></Link></div>:<Empty title="All clear for now" text="Your next assigned repair will appear here."/>}
+      </Panel>
+      <Panel title={admin?'Road conditions':'Your repair locations'} aside={<Link to={base+'/map'}>Open map<ArrowUpRight size={14}/></Link>} className="overview-map"><ReportMap reports={admin?rs:pending} height={235}/><div className="map-legend"><span><i className="navy-dot"/>Reported</span><span><i className="orange-dot"/>High severity</span><span><i className="green-dot"/>Resolved</span></div></Panel>
+      <Panel title="Reports over time" aside={<span className="muted">October 2026 · demo</span>} className="overview-trend"><Chart reports={rs} kind="time"/></Panel>
+      <Panel title={admin?'Priority roads':'Up next'} aside={<Link to={base+(admin?'/reports?severity=High':'/assignments')}>View all<ArrowUpRight size={14}/></Link>} className="overview-priority"><SmallReports reports={(admin?high:pending.filter(r=>r.id!==next?.id)).slice(0,2)}/></Panel>
+    </div>
+    <section className="road-progress"><div><h2>From a tag to a better road</h2><p>Every stage, accounted for.</p></div><div className="progress-stages">{['Submitted','Under Review','Verified','Assigned','In Progress','Resolved'].map(s=><Link key={s} to={base+(admin?'/reports?status='+encodeURIComponent(s):'/assignments')}><strong>{rs.filter(r=>r.status===s).length}</strong><span>{s}</span></Link>)}</div></section>
+  </div>;
 }
 function ReportList({ mode }: { mode: string }) {
   const route = useLocation();
@@ -1052,7 +949,7 @@ function ReportList({ mode }: { mode: string }) {
     [status, setStatus] = useState(
       new URLSearchParams(route.search).get("status") || "All",
     ),
-    [severity, setSeverity] = useState("All"),
+    [severity, setSeverity] = useState(new URLSearchParams(route.search).get("severity") || "All"),
     [area, setArea] = useState("All"),
     [team, setTeam] = useState("All"),
     [sort, setSort] = useState("newest"),

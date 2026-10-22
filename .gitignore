@@ -13,3 +13,7 @@ dev-mock/data/
 test-results/
 playwright-report/
 *.log
+
+browser-preview/.build/
+
+.kotlin/

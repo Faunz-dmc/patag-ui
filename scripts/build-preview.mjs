@@ -1,0 +1,34 @@
+import fs from 'node:fs/promises';
+import path from 'node:path';
+import {pathToFileURL} from 'node:url';
+const project=path.resolve(import.meta.dirname,'..'), dist=path.join(project,'browser-preview');
+const scratch=path.join(dist,'.build');await fs.mkdir(scratch,{recursive:true});
+const {build}=await import(pathToFileURL(path.join(project,'admin-web/node_modules/vite/dist/node/index.js')));
+const assets={};
+for(const [file,mime] of [['assets/patag-logo.png','image/png'],['assets/patag-mascot.png','image/png'],['assets/LilitaOne-Regular.ttf','font/ttf'],['api/demo-evidence.svg','image/svg+xml'],['api/demo-after.svg','image/svg+xml']])assets['/'+file]='data:'+mime+';base64,'+(await fs.readFile(path.join(dist,file))).toString('base64');
+const inlineAssets=code=>Object.entries(assets).reduce((s,[key,value])=>s.replaceAll(key,value),code);
+let api=await fs.readFile(path.join(dist,'preview-api.mjs'),'utf8');
+api=api.replace("'./domain.mjs'",JSON.stringify(path.join(dist,'domain.mjs').replaceAll('\\','/'))).replace('location.origin',"'http://patag-preview.local'");
+await fs.writeFile(path.join(scratch,'api.mjs'),api);
+let citizen=await fs.readFile(path.join(dist,'citizen.mjs'),'utf8');
+citizen=citizen.replaceAll('location.pathname',"location.hash.slice(1)").replace("history.pushState({},'',path)","history.pushState({},'','#'+path.replace(/^#/,''))").replaceAll('href="/citizen/','href="#/citizen/').replace("'/api'+p.url","(window.PATAG_ASSETS['/api'+p.url]||'/api'+p.url)").replace("'popstate'","'hashchange'");
+await fs.writeFile(path.join(scratch,'citizen.mjs'),'export async function startCitizen(){\n'+inlineAssets(citizen)+'\n}');
+const importPath=s=>JSON.stringify(path.join(project,s).replaceAll('\\','/'));
+await fs.writeFile(path.join(scratch,'entry.jsx'),`
+import React from 'react';import {createRoot} from 'react-dom/client';
+import Admin from ${importPath('admin-web/src/App.tsx')};import Maintenance from ${importPath('maintenance-web/src/App.tsx')};
+import L from 'leaflet';import {installPreviewApi,enterRole} from './api.mjs';import {startCitizen} from './citizen.mjs';
+window.L=L;window.PATAG_ASSETS=${JSON.stringify(assets)};
+installPreviewApi();
+const role=location.hash.startsWith('#/admin')?'admin':location.hash.startsWith('#/maintenance')?'maintenance':location.hash.startsWith('#/citizen')?'citizen':null;
+window.addEventListener('hashchange',()=>{const next=location.hash.split('/')[1]||null;if(next!==role)location.reload()});
+document.getElementById('switch-role').onclick=e=>{e.preventDefault();location.hash='';location.reload()};
+async function start(){if(role){await enterRole(role);if(role==='citizen')await startCitizen();else createRoot(document.getElementById('root')).render(React.createElement(role==='admin'?Admin:Maintenance));}else{document.getElementById('root').innerHTML='<main class="preview-hub"><h1>PATAG interactive preview</h1><p>Choose a user side. Navigate the menus, inspect reports and try the workflow.</p><div class="role-links">'+[['citizen','Citizen','home'],['admin','LGU / Admin','dashboard'],['maintenance','Maintenance','dashboard']].map(([r,label,page])=>'<a href="#/'+r+'/'+page+'"><strong>'+label+'</strong><span>Open interactive preview →</span></a>').join('')+'</div><p>Fictional data is saved in this browser. Citizen is the approved browser demo. Map backgrounds need internet.</p></main>';document.querySelectorAll('.role-links a').forEach(a=>a.onclick=()=>setTimeout(()=>location.reload(),0));}}
+start().catch(e=>{document.getElementById('root').textContent='Preview error: '+e.message;console.error(e)});
+`);
+const result=await build({configFile:false,root:scratch,resolve:{dedupe:['react','react-dom','react-router','react-router-dom','leaflet'],alias:{react:path.join(project,'admin-web/node_modules/react'), 'react-dom':path.join(project,'admin-web/node_modules/react-dom'),leaflet:path.join(project,'admin-web/node_modules/leaflet')}},define:{'import.meta.env.VITE_API_URL':JSON.stringify('/api'),'process.env.NODE_ENV':JSON.stringify('production')},plugins:[{name:'offline-preview',enforce:'pre',transform(code,id){if(id.includes('/src/')||id.includes('\\src\\')){code=code.replaceAll('BrowserRouter','HashRouter');if(id.endsWith('api.ts'))code=code.replace('url.startsWith("data:") ? url :','url.startsWith("data:") ? url : (window as any).PATAG_ASSETS["/api"+url] ||');return inlineAssets(code);}}}],build:{write:false,target:'es2022',cssCodeSplit:false,lib:{entry:path.join(scratch,'entry.jsx'),formats:['iife'],name:'PatagPreview',cssFileName:'preview'},rolldownOptions:{output:{inlineDynamicImports:true}},assetsInlineLimit:10000000}});
+const output=(Array.isArray(result)?result[0]:result).output;
+const js=output.filter(x=>x.type==='chunk').map(x=>x.code).join('\n');
+const css=output.filter(x=>x.type==='asset'&&x.fileName.endsWith('.css')).map(x=>x.source).join('\n')+'\n'+inlineAssets(await fs.readFile(path.join(dist,'preview.css'),'utf8'))+'\n'+inlineAssets(await fs.readFile(path.join(dist,'citizen-premium.css'),'utf8'));
+const html='<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>PATAG interactive preview</title><style>'+css+'</style></head><body><div id="preview-notice">PATAG interactive preview <span>Fictional data · saved in this browser</span><a id="switch-role" href="#">Switch role ↗</a></div><div id="root"></div><script>'+js.replaceAll('</script','<\\/script')+'</script></body></html>';
+const folder=path.join(project,'preview');await fs.mkdir(folder,{recursive:true});await fs.writeFile(path.join(folder,'Open-PATAG.html'),html);console.log('Created interactive HTML:',html.length,'bytes');

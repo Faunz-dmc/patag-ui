@@ -1,0 +1,92 @@
+[
+  {
+    "role": "admin",
+    "width": 1440,
+    "heading": [
+      "Roads overview"
+    ],
+    "errors": [],
+    "overflow": false,
+    "brokenImages": []
+  },
+  {
+    "role": "maintenance",
+    "width": 1440,
+    "heading": [
+      "Your day on the road"
+    ],
+    "errors": [],
+    "overflow": false,
+    "brokenImages": []
+  },
+  {
+    "role": "citizen",
+    "width": 1440,
+    "heading": [
+      "May lubaksa daan?"
+    ],
+    "errors": [],
+    "overflow": false,
+    "brokenImages": []
+  },
+  {
+    "role": "admin",
+    "width": 768,
+    "heading": [
+      "Roads overview"
+    ],
+    "errors": [],
+    "overflow": false,
+    "brokenImages": []
+  },
+  {
+    "role": "maintenance",
+    "width": 768,
+    "heading": [
+      "Your day on the road"
+    ],
+    "errors": [],
+    "overflow": false,
+    "brokenImages": []
+  },
+  {
+    "role": "citizen",
+    "width": 768,
+    "heading": [
+      "May lubaksa daan?"
+    ],
+    "errors": [],
+    "overflow": false,
+    "brokenImages": []
+  },
+  {
+    "role": "admin",
+    "width": 390,
+    "heading": [
+      "Roads overview"
+    ],
+    "errors": [],
+    "overflow": false,
+    "brokenImages": []
+  },
+  {
+    "role": "maintenance",
+    "width": 390,
+    "heading": [
+      "Your day on the road"
+    ],
+    "errors": [],
+    "overflow": false,
+    "brokenImages": []
+  },
+  {
+    "role": "citizen",
+    "width": 390,
+    "heading": [
+      "May lubaksa daan?"
+    ],
+    "errors": [],
+    "overflow": false,
+    "brokenImages": []
+  }
+]

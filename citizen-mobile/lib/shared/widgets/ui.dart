@@ -2,104 +2,400 @@ import 'package:flutter/material.dart';
 import '../../app/theme.dart';
 import '../../core/api.dart';
 import '../../core/models.dart';
-void go(BuildContext context,String route)=>Navigator.of(context).pushNamed(route);
-void home(BuildContext context)=>Navigator.of(context).pushNamedAndRemoveUntil('/home',(route)=>false);
-void message(BuildContext context,String text)=>ScaffoldMessenger.of(context).showSnackBar(SnackBar(content:Text(text)));
-Widget logo({
-  double width=135
-}
-)=>Image.asset('assets/images/patag-logo.png',width:width,semanticLabel:'PATAG');
-Widget mascot({
-  double width=160
-}
-)=>Image.asset('assets/images/patag-mascot.png',width:width,excludeFromSemantics:true);
-Widget heading(BuildContext c,String text)=>Text(text,style:Theme.of(c).textTheme.headlineMedium);
-Widget gap([double height=16])=>SizedBox(height:height);
-Widget action(String label,VoidCallback? press,{
-  IconData icon=Icons.arrow_forward
-}
-)=>FilledButton(onPressed:press,child:Row(mainAxisAlignment:MainAxisAlignment.center,children:[Flexible(child:Text(label,
-textAlign:TextAlign.center)),const SizedBox(width:10),Icon(icon,size:18)]));
-Widget field(String label,TextEditingController ctrl,{
-  int lines=1,TextInputType? keyboard,bool required=true,ValueChanged<String>? onChanged
-}
-)=>Padding(padding:const EdgeInsets.only(bottom:16),child:TextFormField(controller:ctrl,maxLines:lines,keyboardType:keyboard,
-onChanged:onChanged,decoration:InputDecoration(labelText:label),validator:(s)=>required&&(s==null||s.trim().isEmpty)?'$label is required.':null));
-class StatusChip extends StatelessWidget{
+
+void go(BuildContext context, String route) =>
+    Navigator.of(context).pushNamed(route);
+void home(BuildContext context) =>
+    Navigator.of(context).pushNamedAndRemoveUntil('/home', (route) => false);
+void message(BuildContext context, String text) =>
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(text)));
+Widget logo({double width = 135}) => Image.asset('assets/images/patag-logo.png',
+    width: width, semanticLabel: 'PATAG');
+Widget mascot({double width = 160}) =>
+    Image.asset('assets/images/patag-mascot.png',
+        width: width, excludeFromSemantics: true);
+Widget heading(BuildContext c, String text) =>
+    Text(text, style: Theme.of(c).textTheme.headlineMedium);
+Widget gap([double height = 16]) => SizedBox(height: height);
+Widget action(String label, VoidCallback? press,
+        {IconData icon = Icons.arrow_forward}) =>
+    FilledButton(
+        onPressed: press,
+        child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+          Flexible(child: Text(label, textAlign: TextAlign.center)),
+          const SizedBox(width: 10),
+          Icon(icon, size: 18)
+        ]));
+Widget field(String label, TextEditingController ctrl,
+        {int lines = 1,
+        TextInputType? keyboard,
+        bool required = true,
+        ValueChanged<String>? onChanged}) =>
+    Padding(
+        padding: const EdgeInsets.only(bottom: 16),
+        child: TextFormField(
+            controller: ctrl,
+            maxLines: lines,
+            keyboardType: keyboard,
+            onChanged: onChanged,
+            decoration: InputDecoration(labelText: label),
+            validator: (s) => required && (s == null || s.trim().isEmpty)
+                ? '$label is required.'
+                : null));
+
+class StatusChip extends StatelessWidget {
   final String value;
-  const StatusChip(this.value,{
-    super.key
-  }
-  );
-  @override Widget build(BuildContext context){
-    final success=['Resolved','Verified'].contains(value);
-    return Container(padding:const EdgeInsets.symmetric(horizontal:10,vertical:6),decoration:BoxDecoration(color:success?const Color(0xFFE8F2ED):value=='High'?const Color(0xFFFEE8DD):const Color(0xFFEDF0F5),
-    borderRadius:BorderRadius.circular(8)),child:Text(value,style:TextStyle(fontSize:12,color:success?const Color(0xFF21633F):ink,
-    fontWeight:FontWeight.bold)));
+  const StatusChip(this.value, {super.key});
+  @override
+  Widget build(BuildContext context) {
+    final success = ['Resolved', 'Verified'].contains(value);
+    return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        decoration: BoxDecoration(
+            color: success
+                ? const Color(0xFFE8F2ED)
+                : value == 'High'
+                    ? const Color(0xFFFEE8DD)
+                    : const Color(0xFFEDF0F5),
+            borderRadius: BorderRadius.circular(999)),
+        child: Text(value,
+            style: TextStyle(
+                fontSize: 12,
+                color: success ? const Color(0xFF21633F) : ink,
+                fontWeight: FontWeight.bold)));
   }
 }
-class Evidence extends StatelessWidget{
-  final Map<String,dynamic> photo;
-  const Evidence(this.photo,{
-    super.key
-  }
-  );
-  @override Widget build(BuildContext context)=>ClipRRect(borderRadius:BorderRadius.circular(14),child:photo['demo']==true?Container(height:170,
-  width:double.infinity,color:const Color(0xFFE5E8EA),child:const Column(mainAxisAlignment:MainAxisAlignment.center,
-  children:[Icon(Icons.add_road,size:46,color:ink),Text('Illustrated demo evidence')])):Image.network(store.photoUrl(photo['url']),
-  height:190,width:double.infinity,fit:BoxFit.cover,errorBuilder:(_,error,stack)=>const SizedBox(height:130,
-  child:Center(child:Text('Photo unavailable. Check your connection.')))));
+
+class Evidence extends StatelessWidget {
+  final Map<String, dynamic> photo;
+  const Evidence(this.photo, {super.key});
+  @override
+  Widget build(BuildContext context) => ClipRRect(
+      borderRadius: BorderRadius.circular(14),
+      child: photo['demo'] == true
+          ? Container(
+              height: 170,
+              width: double.infinity,
+              color: const Color(0xFFE5E8EA),
+              child: const Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.add_road, size: 46, color: ink),
+                    Text('Illustrated demo evidence')
+                  ]))
+          : Image.network(store.photoUrl(photo['url']),
+              height: 190,
+              width: double.infinity,
+              fit: BoxFit.cover,
+              errorBuilder: (_, error, stack) => const SizedBox(
+                  height: 130,
+                  child: Center(
+                      child:
+                          Text('Photo unavailable. Check your connection.')))));
 }
-class ReportCard extends StatelessWidget{
+
+class ReportCard extends StatelessWidget {
   final PotholeReport report;
   final bool public;
-  const ReportCard(this.report,{
-    this.public=false,super.key
-  }
-  );
-  @override Widget build(BuildContext context)=>Card(child:InkWell(borderRadius:BorderRadius.circular(20),
-  onTap:()=>go(context,public?'/map/reports/${report.id}':'/reports/${report.id}'),child:Padding(padding:const EdgeInsets.all(16),
-  child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[if(report.photos.isNotEmpty)Evidence(Map<String,
-  dynamic>.from(report.photos.first)),gap(14),Row(children:[Expanded(child:Text(report.road,style:const TextStyle(fontSize:17,
-  fontWeight:FontWeight.bold))),const Icon(Icons.arrow_outward,size:18)]),gap(6),Text('Brgy. ${report.barangay}',
-  style:const TextStyle(color:slate,fontSize:12)),gap(12),Wrap(spacing:8,runSpacing:8,children:[StatusChip(report.status),
-  StatusChip(report.severity)]),gap(10),Text(report.id,style:const TextStyle(fontSize:11,color:slate))]))));
+  const ReportCard(this.report, {this.public = false, super.key});
+  @override
+  Widget build(BuildContext context) => Card(
+      child: InkWell(
+          borderRadius: BorderRadius.circular(22),
+          onTap: () => go(context,
+              public ? '/map/reports/${report.id}' : '/reports/${report.id}'),
+          child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(children: [
+                if (report.photos.isNotEmpty) ...[
+                  SizedBox(
+                      width: 68,
+                      height: 100,
+                      child: ClipRRect(
+                          borderRadius: BorderRadius.circular(14),
+                          child: FittedBox(
+                              fit: BoxFit.cover,
+                              child: SizedBox(
+                                  width: 170,
+                                  height: 170,
+                                  child: Evidence(Map<String, dynamic>.from(
+                                      report.photos.first)))))),
+                  const SizedBox(width: 14)
+                ],
+                Expanded(
+                    child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                      Row(children: [
+                        StatusChip(report.status),
+                        const Spacer(),
+                        const Icon(Icons.arrow_forward, size: 16)
+                      ]),
+                      gap(10),
+                      Text(report.road,
+                          style: const TextStyle(
+                              fontSize: 15, fontWeight: FontWeight.w600)),
+                      gap(4),
+                      Text('Brgy. ${report.barangay}',
+                          style: const TextStyle(fontSize: 12, color: slate)),
+                      gap(10),
+                      Wrap(
+                          spacing: 8,
+                          runSpacing: 6,
+                          crossAxisAlignment: WrapCrossAlignment.center,
+                          children: [
+                            Text(report.id,
+                                style: const TextStyle(
+                                    fontSize: 11, color: slate)),
+                            StatusChip(report.severity)
+                          ])
+                    ]))
+              ]))));
 }
-class EmptyState extends StatelessWidget{
-  final String title,text;
-  const EmptyState(this.title,this.text,{
-    super.key
-  }
-  );
-  @override Widget build(BuildContext context)=>Padding(padding:const EdgeInsets.symmetric(vertical:32,horizontal:16),
-  child:Column(children:[mascot(width:100),gap(),heading(context,title),gap(10),Text(text,textAlign:TextAlign.center,
-  style:const TextStyle(color:slate))]));
+
+class EmptyState extends StatelessWidget {
+  final String title, text;
+  const EmptyState(this.title, this.text, {super.key});
+  @override
+  Widget build(BuildContext context) => Padding(
+      padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 16),
+      child: Column(children: [
+        mascot(width: 100),
+        gap(),
+        heading(context, title),
+        gap(10),
+        Text(text,
+            textAlign: TextAlign.center, style: const TextStyle(color: slate))
+      ]));
 }
-class Screen extends StatelessWidget{
+
+class Screen extends StatelessWidget {
   final String title;
   final Widget body;
   final int? selected;
   final List<Widget>? actions;
-  const Screen({
-    required this.title,required this.body,this.selected,this.actions,super.key
+  const Screen(
+      {required this.title,
+      required this.body,
+      this.selected,
+      this.actions,
+      super.key});
+  @override
+  Widget build(BuildContext context) => Scaffold(
+      appBar: AppBar(
+          title: title == 'PATAG'
+              ? logo(width: 108)
+              : Text(title,
+                  style: const TextStyle(
+                      fontSize: 17, fontWeight: FontWeight.w600)),
+          actions: actions),
+      body: SafeArea(
+          child: Column(children: [
+        if (store.networkError != null)
+          MaterialBanner(content: Text(store.networkError!), actions: [
+            TextButton(
+                onPressed: () => store.refresh().catchError((Object e) {
+                      if (context.mounted) {
+                        message(context, PatagStore.clean(e));
+                      }
+                    }),
+                child: const Text('Retry'))
+          ]),
+        Expanded(child: body)
+      ])),
+      bottomNavigationBar:
+          selected == null ? null : PatagNavigation(selected: selected!));
+}
+
+class PatagNavigation extends StatelessWidget {
+  final int selected;
+  const PatagNavigation({required this.selected, super.key});
+  @override
+  Widget build(BuildContext context) => SafeArea(
+      top: false,
+      child: Padding(
+          padding: const EdgeInsets.fromLTRB(14, 8, 14, 12),
+          child: Container(
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                  color: ink, borderRadius: BorderRadius.circular(40)),
+              child: Row(
+                  children: List.generate(5, (i) {
+                final active = selected == i;
+                final color = i == 2
+                    ? orange
+                    : active
+                        ? Colors.white
+                        : Colors.transparent;
+                final foreground =
+                    i == 2 || active ? ink : const Color(0xFFDCE4EE);
+                return Expanded(
+                    child: Semantics(
+                        selected: active,
+                        button: true,
+                        label: [
+                          'Home',
+                          'Map',
+                          'Report a pothole',
+                          'My reports',
+                          'Profile'
+                        ][i],
+                        child: Material(
+                            color: color,
+                            borderRadius: BorderRadius.circular(32),
+                            child: InkWell(
+                                borderRadius: BorderRadius.circular(32),
+                                onTap: () {
+                                  final route = [
+                                    '/home',
+                                    '/map',
+                                    '/report/new',
+                                    '/reports',
+                                    '/profile'
+                                  ][i];
+                                  if (i == 2) {
+                                    go(context, route);
+                                  } else if (!active) {
+                                    Navigator.of(context)
+                                        .pushReplacementNamed(route);
+                                  }
+                                },
+                                child: Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                        vertical: 10),
+                                    child: Column(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Icon(
+                                              [
+                                                Icons.home_outlined,
+                                                Icons.map_outlined,
+                                                Icons.add,
+                                                Icons.assignment_outlined,
+                                                Icons.person_outline
+                                              ][i],
+                                              color: foreground,
+                                              size: 22),
+                                          const SizedBox(height: 5),
+                                          Text(
+                                              [
+                                                'Home',
+                                                'Map',
+                                                'Report',
+                                                'My reports',
+                                                'Profile'
+                                              ][i],
+                                              style: TextStyle(
+                                                  color: foreground,
+                                                  fontSize: 10,
+                                                  fontWeight: active
+                                                      ? FontWeight.w600
+                                                      : FontWeight.normal))
+                                        ]))))));
+              })))));
+}
+
+class ReportProgress extends StatelessWidget {
+  final PotholeReport report;
+  const ReportProgress(this.report, {super.key});
+  @override
+  Widget build(BuildContext context) {
+    final current = [
+      'Submitted',
+      'Under Review',
+      'Verified',
+      'Assigned',
+      'In Progress',
+      'Resolved'
+    ].indexOf(report.status);
+    final awaiting =
+        report.json['completion']?['state'] == 'Awaiting Verification';
+    return Container(
+        padding: const EdgeInsets.all(22),
+        decoration:
+            BoxDecoration(color: ink, borderRadius: BorderRadius.circular(24)),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Row(children: [
+            const Expanded(
+                child: Text('Report progress',
+                    style: TextStyle(color: Colors.white, fontSize: 13))),
+            StatusChip(report.status)
+          ]),
+          gap(16),
+          Text(
+              report.status == 'Resolved'
+                  ? 'Repair verified. A better road ahead.'
+                  : awaiting
+                      ? 'Repair submitted. Awaiting LGU verification.'
+                      : 'Follow your tag, from report to repair.',
+              style: const TextStyle(color: Color(0xFFDDE5EF), fontSize: 13)),
+          gap(22),
+          Row(
+              children: List.generate(
+                  4,
+                  (i) => Expanded(
+                          child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                            Row(children: [
+                              Icon(
+                                  current >= [0, 2, 4, 5][i]
+                                      ? Icons.check_circle
+                                      : Icons.radio_button_unchecked,
+                                  size: 18,
+                                  color: current >= [0, 2, 4, 5][i]
+                                      ? orange
+                                      : const Color(0xFFABB7C8)),
+                              if (i < 3)
+                                Expanded(
+                                    child: Container(
+                                        height: 2,
+                                        color: current > [0, 2, 4, 5][i]
+                                            ? orange
+                                            : const Color(0xFF657286)))
+                            ]),
+                            gap(10),
+                            Text(
+                                [
+                                  'Reported',
+                                  'Verified',
+                                  'Repair',
+                                  'Resolved'
+                                ][i],
+                                style: const TextStyle(
+                                    color: Color(0xFFDDE5EF), fontSize: 11))
+                          ]))))
+        ]));
   }
-  );
-  @override Widget build(BuildContext context)=>Scaffold(appBar:AppBar(title:Text(title,style:const TextStyle(fontSize:17,
-  fontWeight:FontWeight.bold)),actions:actions),body:SafeArea(child:Column(children:[if(store.networkError!=null)MaterialBanner(content:Text(store.networkError!),
-  actions:[TextButton(onPressed:()=>store.refresh().catchError((Object e){
-    if(context.mounted)message(context,PatagStore.clean(e));
-  }
-  ),child:const Text('Retry'))]),Expanded(child:body)])),bottomNavigationBar:selected==null?null:NavigationBar(selectedIndex:selected!,
-  labelBehavior:NavigationDestinationLabelBehavior.alwaysShow,onDestinationSelected:(i){
-    final route=['/home','/map','/report/new','/reports','/profile'][i];
-    if(i==2){
-      go(context,route);
-    }
-    else{
-      Navigator.of(context).pushReplacementNamed(route);
-    }
-  }
-  ,destinations:const [NavigationDestination(icon:Icon(Icons.home_outlined),label:'Home'),NavigationDestination(icon:Icon(Icons.map_outlined),
-  label:'Map'),NavigationDestination(icon:Icon(Icons.add_circle,color:orange),label:'Report'),NavigationDestination(icon:Icon(Icons.assignment_outlined),
-  label:'My reports'),NavigationDestination(icon:Icon(Icons.person_outline),label:'Profile')]));
+}
+
+class WizardSteps extends StatelessWidget {
+  final int current;
+  const WizardSteps(this.current, {super.key});
+  @override
+  Widget build(BuildContext context) => Padding(
+      padding: const EdgeInsets.fromLTRB(22, 12, 22, 8),
+      child: Row(
+          children: List.generate(
+              4,
+              (i) => Expanded(
+                  child: Padding(
+                      padding: const EdgeInsets.only(right: 8),
+                      child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Container(
+                                height: 5,
+                                decoration: BoxDecoration(
+                                    color: i <= current ? orange : line,
+                                    borderRadius: BorderRadius.circular(10))),
+                            gap(10),
+                            Text(['Photo', 'Location', 'Details', 'Review'][i],
+                                style: TextStyle(
+                                    fontSize: 12,
+                                    color: i == current ? ink : slate,
+                                    fontWeight: i == current
+                                        ? FontWeight.w600
+                                        : FontWeight.normal))
+                          ]))))));
 }

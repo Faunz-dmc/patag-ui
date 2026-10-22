@@ -5,6 +5,8 @@
   "scripts": {
     "demo:api": "node dev-mock/server.mjs",
     "test:api": "node --test dev-mock/server.test.mjs",
-    "build:web": "npm --prefix admin-web run build && npm --prefix maintenance-web run build"
+    "build:web": "npm --prefix admin-web run build && npm --prefix maintenance-web run build",
+    "build:preview": "node scripts/build-preview.mjs",
+    "test:preview": "node scripts/qa/preview-workflow.mjs"
   }
 }

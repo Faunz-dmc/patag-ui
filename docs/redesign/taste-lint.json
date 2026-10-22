@@ -1,0 +1,101 @@
+{
+ "files": 15,
+ "findings": [
+  {
+   "level": "WARN",
+   "id": "numbering",
+   "file": "outputs/PATAG/admin-web/src/App.tsx",
+   "line": 742,
+   "match": "\"09\"",
+   "message": "Decorative index numbering (01 / 02 / 03)."
+  },
+  {
+   "level": "WARN",
+   "id": "shadow",
+   "file": "outputs/PATAG/admin-web/src/styles/app.css",
+   "line": 1114,
+   "match": "box-shadow:",
+   "message": "Shadow. Elements at rest carry none; only real overlays (menu, dialog, sticky bar) may."
+  },
+  {
+   "level": "WARN",
+   "id": "shadow",
+   "file": "outputs/PATAG/admin-web/src/styles/app.css",
+   "line": 1143,
+   "match": "box-shadow:",
+   "message": "Shadow. Elements at rest carry none; only real overlays (menu, dialog, sticky bar) may."
+  },
+  {
+   "level": "WARN",
+   "id": "shadow",
+   "file": "outputs/PATAG/admin-web/src/styles/premium.css",
+   "line": 21,
+   "match": "box-shadow:",
+   "message": "Shadow. Elements at rest carry none; only real overlays (menu, dialog, sticky bar) may."
+  },
+  {
+   "level": "WARN",
+   "id": "shadow",
+   "file": "outputs/PATAG/admin-web/src/styles/premium.css",
+   "line": 54,
+   "match": "box-shadow:",
+   "message": "Shadow. Elements at rest carry none; only real overlays (menu, dialog, sticky bar) may."
+  },
+  {
+   "level": "WARN",
+   "id": "numbering",
+   "file": "outputs/PATAG/maintenance-web/src/App.tsx",
+   "line": 742,
+   "match": "\"09\"",
+   "message": "Decorative index numbering (01 / 02 / 03)."
+  },
+  {
+   "level": "WARN",
+   "id": "shadow",
+   "file": "outputs/PATAG/maintenance-web/src/styles/app.css",
+   "line": 1114,
+   "match": "box-shadow:",
+   "message": "Shadow. Elements at rest carry none; only real overlays (menu, dialog, sticky bar) may."
+  },
+  {
+   "level": "WARN",
+   "id": "shadow",
+   "file": "outputs/PATAG/maintenance-web/src/styles/app.css",
+   "line": 1143,
+   "match": "box-shadow:",
+   "message": "Shadow. Elements at rest carry none; only real overlays (menu, dialog, sticky bar) may."
+  },
+  {
+   "level": "WARN",
+   "id": "shadow",
+   "file": "outputs/PATAG/maintenance-web/src/styles/premium.css",
+   "line": 21,
+   "match": "box-shadow:",
+   "message": "Shadow. Elements at rest carry none; only real overlays (menu, dialog, sticky bar) may."
+  },
+  {
+   "level": "WARN",
+   "id": "shadow",
+   "file": "outputs/PATAG/maintenance-web/src/styles/premium.css",
+   "line": 54,
+   "match": "box-shadow:",
+   "message": "Shadow. Elements at rest carry none; only real overlays (menu, dialog, sticky bar) may."
+  },
+  {
+   "level": "WARN",
+   "id": "shadow",
+   "file": "outputs/PATAG/browser-preview/citizen-premium.css",
+   "line": 10,
+   "match": "box-shadow:",
+   "message": "Shadow. Elements at rest carry none; only real overlays (menu, dialog, sticky bar) may."
+  },
+  {
+   "level": "WARN",
+   "id": "em-dash",
+   "file": "(all files)",
+   "line": 0,
+   "match": "6 em dashes",
+   "message": "Em-dash habit. Use a full stop or a comma; keep at most one or two on a page."
+  }
+ ]
+}

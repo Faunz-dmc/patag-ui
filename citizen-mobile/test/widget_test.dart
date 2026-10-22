@@ -12,7 +12,10 @@ void main(){
       await tester.pumpWidget(MaterialApp(theme:patagTheme(),builder:(context,child)=>MediaQuery(data:MediaQuery.of(context).copyWith(textScaler:const TextScaler.linear(1.4)),
       child:child!),home:const Welcome()));
       await tester.pumpAndSettle();
-      expect(find.text('Sign in'),findsOneWidget);
+      await tester.scrollUntilVisible(find.text('Sign in'), 180, scrollable: find.byType(Scrollable).first);
+      await tester.ensureVisible(find.text('Sign in'));
+      await tester.pumpAndSettle();
+      expect(find.text('Sign in').hitTestable(),findsOneWidget);
       expect(tester.takeException(),isNull);
     }
     );

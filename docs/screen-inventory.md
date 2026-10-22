@@ -1,29 +1,29 @@
 # Screen inventory
 
-All 55 specified route entries have source implementations. The PDF requires functional areas, not 55 distinct pages. Related views intentionally reuse the report workspace component. Web routes were opened in local Chrome; this is route smoke coverage, not proof of every control. Flutter routes have not been compiled or run.
+All 55 specified route entries have source implementations. The PDF requires functional areas, not 55 distinct pages. Related views intentionally reuse the report workspace component. Web routes were opened in local Chrome; this is route smoke coverage, not proof of every control. Flutter source now passes analysis and 13 widget/model tests; actual Android device validation remains incomplete. See redesign-validation.md for the latest evidence.
 
 | ID | Screen | Route | Scope | Evidence |
 |---|---|---|---|---|
-| C01 | Splash Screen | `/` | Expanded brief | Source only — native validation blocked |
-| C02 | Onboarding | `/onboarding` | Expanded brief | Source only — native validation blocked |
-| C03 | Welcome / Authentication Entry | `/welcome` | Expanded brief | Source only — native validation blocked |
-| C04 | Registration | `/register` | Expanded brief | Source only — native validation blocked |
-| C05 | Login | `/login` | Expanded brief | Source only — native validation blocked |
-| C06 | Forgot Password | `/forgot-password` | Expanded brief | Source only — native validation blocked |
-| C07 | Citizen Home Dashboard | `/home` | PDF functional area | Source only — native validation blocked |
-| C08 | Report A Pothole | `/report/new` | PDF functional area | Source only — native validation blocked |
-| C09 | Report Submission Success | `/report/success/:id` | Expanded brief | Source only — native validation blocked |
-| C10 | My Reports | `/reports` | PDF functional area | Source only — native validation blocked |
-| C11 | Report Details And Status Timeline | `/reports/:id` | PDF functional area | Source only — native validation blocked |
-| C12 | Public Pothole Map | `/map` | PDF functional area | Source only — native validation blocked |
-| C13 | Public Report Details | `/map/reports/:id` | Expanded brief | Source only — native validation blocked |
-| C14 | Notifications | `/notifications` | PDF functional area | Source only — native validation blocked |
-| C15 | Repair Feedback | `/reports/:id/feedback` | PDF functional area | Source only — native validation blocked |
-| C16 | Profile | `/profile` | Expanded brief | Source only — native validation blocked |
-| C17 | Edit Profile | `/profile/edit` | Expanded brief | Source only — native validation blocked |
-| C18 | Settings | `/settings` | Expanded brief | Source only — native validation blocked |
-| C19 | Help And Reporting Guide | `/help` | Expanded brief | Source only — native validation blocked |
-| C20 | About Patag | `/about` | Expanded brief | Source only — native validation blocked |
+| C01 | Splash Screen | `/` | Expanded brief | Source implemented; Android device check outstanding |
+| C02 | Onboarding | `/onboarding` | Expanded brief | Source implemented; Android device check outstanding |
+| C03 | Welcome / Authentication Entry | `/welcome` | Expanded brief | Source implemented; Android device check outstanding |
+| C04 | Registration | `/register` | Expanded brief | Source implemented; Android device check outstanding |
+| C05 | Login | `/login` | Expanded brief | Source implemented; Android device check outstanding |
+| C06 | Forgot Password | `/forgot-password` | Expanded brief | Source implemented; Android device check outstanding |
+| C07 | Citizen Home Dashboard | `/home` | PDF functional area | Source implemented; Android device check outstanding |
+| C08 | Report A Pothole | `/report/new` | PDF functional area | Source implemented; Android device check outstanding |
+| C09 | Report Submission Success | `/report/success/:id` | Expanded brief | Source implemented; Android device check outstanding |
+| C10 | My Reports | `/reports` | PDF functional area | Source implemented; Android device check outstanding |
+| C11 | Report Details And Status Timeline | `/reports/:id` | PDF functional area | Source implemented; Android device check outstanding |
+| C12 | Public Pothole Map | `/map` | PDF functional area | Source implemented; Android device check outstanding |
+| C13 | Public Report Details | `/map/reports/:id` | Expanded brief | Source implemented; Android device check outstanding |
+| C14 | Notifications | `/notifications` | PDF functional area | Source implemented; Android device check outstanding |
+| C15 | Repair Feedback | `/reports/:id/feedback` | PDF functional area | Source implemented; Android device check outstanding |
+| C16 | Profile | `/profile` | Expanded brief | Source implemented; Android device check outstanding |
+| C17 | Edit Profile | `/profile/edit` | Expanded brief | Source implemented; Android device check outstanding |
+| C18 | Settings | `/settings` | Expanded brief | Source implemented; Android device check outstanding |
+| C19 | Help And Reporting Guide | `/help` | Expanded brief | Source implemented; Android device check outstanding |
+| C20 | About Patag | `/about` | Expanded brief | Source implemented; Android device check outstanding |
 | A01 | Admin Login | `/admin/login` | Expanded brief | Browser route opened; core workflows tested |
 | A02 | Admin Dashboard | `/admin/dashboard` | PDF functional area | Browser route opened; core workflows tested |
 | A03 | All Reports | `/admin/reports` | PDF functional area | Browser route opened; core workflows tested |

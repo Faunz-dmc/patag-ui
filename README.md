@@ -2,7 +2,7 @@
 
 Pa-tag lubak, lubak patag.
 
-Academic IT 305 project: a native Flutter citizen application and two independent React/TypeScript/Vite portals for LGU review and road maintenance. Source covers all 55 expanded route entries. Both web portals build and pass a tested cross-role demonstration. Android source and project scaffolding are included, but native compilation/device validation is blocked in this Codex environment. This is not a production-ready system.
+Academic IT 305 project: a native Flutter citizen application and two independent React/TypeScript/Vite portals for LGU review and road maintenance. Source covers all 55 expanded route entries. Both web portals build and pass a tested cross-role demonstration. Flutter analysis and all 13 tests pass. Android APK compilation and emulator inspection remain unconfirmed. This is not a production-ready system.
 
 ## Structure
 
@@ -17,26 +17,15 @@ docs/               Compliance matrix, 55 routes, contract, design and QA
 
 Use fictional accounts/data only. There are no real LGU partnerships, repair records or official statistics. The mock service must not be exposed publicly. It supports cross-process state through HTTP and local JSON, not shared localStorage.
 
+## Open the interactive preview
+
+Open [preview/Open-PATAG.html](preview/Open-PATAG.html) directly in Chrome or Edge. Choose Citizen, LGU / Admin or Maintenance. No local server is needed. This is a functioning demo with fictional browser-local data, not a screenshot gallery. The citizen preview is a separate approved browser demo; the native application remains Flutter. Map tiles require internet.
+
+Rebuild with `npm run build:preview` after installing dependencies in both web folders. See [redesign validation](docs/redesign-validation.md), [design audit](docs/ui-redesign-audit.md) and [design system](docs/design-system.md).
+
 ## Prerequisites and observed environment
 
-Node 24.22.0, npm 11.19.1 and Git 2.55.0 were available. The web lockfiles record the installed dependency versions. Flutter was found at `C:\Users\user\Downloads\flutter_windows_3.47.6-stable\flutter`, Android SDK and Android Studio were present, and AVD `Medium_Phone_API_37.0` was listed. No device was running. Dart launch fails here with `Empty value for option resolved_executable_name` / `Failed to canonicalize path ... OS error (5)`, including direct runtime checks. Therefore flutter create, pub get, analyze, test and APK build have not succeeded. Android files were rendered from the installed SDK templates as a recoverable source scaffold; do not treat them as a verified flutter-create build.
-
-Flutter/Dart VS Code extension installation was attempted but blocked by EPERM cache rename/chdir failures. Install outside this sandbox:
-
-```powershell
-code --install-extension Dart-Code.flutter
-code --install-extension Dart-Code.dart-code
-flutter doctor -v
-flutter devices
-```
-
-If Flutter is not in PATH for the current shell:
-
-```powershell
-$env:Path = "C:\Users\user\Downloads\flutter_windows_3.47.6-stable\flutter\bin;" + $env:Path
-```
-
-If the same Dart runtime error occurs in an ordinary terminal, repair/re-extract the stable Flutter SDK from the official Flutter distribution before running the native checks. Do not overwrite your source while troubleshooting. The Android project may be regenerated with `flutter create --platforms=android --project-name patag_citizen .` in a backup copy if required.
+Node 24, npm 11, Flutter 3.47.6 and Dart 3.13.5 were used. Both web builds, API tests, Flutter analysis and all 13 Flutter tests passed. The Android SDK and an existing AVD were found. The APK build session ended before a confirmed artifact; native emulator validation remains outstanding. Earlier sandbox Dart errors were resolved by running authorized tooling outside that sandbox.
 
 ## Run locally (PowerShell)
 
