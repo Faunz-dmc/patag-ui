@@ -496,7 +496,7 @@ function Shell() {
           <div className="nav-bottom">
             <NavLink title="Notifications" aria-label="Notifications" to={base + "/notifications"}>
               <Bell size={18} />
-              Notifications
+              <span className="nav-text">Notifications</span>
               {localStorage.getItem("patag-notification-preference") !==
                 "off" &&
                 data.notifications.some((n) => !n.read) && (
@@ -505,7 +505,7 @@ function Shell() {
             </NavLink>
             <NavLink title="Profile and settings" aria-label="Profile and settings" to={base + (admin ? "/settings" : "/profile")}>
               <Settings size={18} />
-              {admin ? "Settings" : "Profile & settings"}
+              <span className="nav-text">{admin ? "Settings" : "Profile & settings"}</span>
             </NavLink>
             <div className="user-row">
               <span className="avatar">
