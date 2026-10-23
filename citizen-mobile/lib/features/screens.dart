@@ -770,18 +770,11 @@ class _MyReportsState extends State<MyReports> {
             Wrap(
               spacing: 16,
               children: [
-                DropdownButton<String>(
-                  value: status,
-                  items: ['All', ...reportStatuses]
-                      .map(
-                        (s) => DropdownMenuItem(
-                          value: s,
-                          child: Text(s == 'All' ? 'All statuses' : s),
-                        ),
-                      )
-                      .toList(),
-                  onChanged: (s) => setState(() => status = s!),
-                ),
+                ...['All', ...reportStatuses].map((s) => ChoiceChip(
+                      label: Text(s),
+                      selected: status == s,
+                      onSelected: (_) => setState(() => status = s),
+                    )),
                 TextButton.icon(
                   onPressed: () => setState(() => newest = !newest),
                   icon: const Icon(Icons.sort),

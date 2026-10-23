@@ -18,9 +18,17 @@ Widget logo({double width = 135}) => Builder(
             : null,
         colorBlendMode: BlendMode.srcIn,
         semanticLabel: 'PATAG'));
-Widget mascot({double width = 160}) =>
-    Image.asset('assets/images/patag-mascot.png',
-        width: width, excludeFromSemantics: true);
+Widget mascot({double width = 160}) => Builder(
+    builder: (context) => Container(
+        width: width,
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+            color: Theme.of(context).brightness == Brightness.dark
+                ? const Color(0xFFE4ECF4)
+                : const Color(0xFFFFF4E6),
+            borderRadius: BorderRadius.circular(24)),
+        child: Image.asset('assets/images/patag-mascot.png',
+            fit: BoxFit.contain, excludeFromSemantics: true)));
 Widget heading(BuildContext c, String text) =>
     Text(text, style: Theme.of(c).textTheme.headlineMedium);
 Widget gap([double height = 16]) => SizedBox(height: height);

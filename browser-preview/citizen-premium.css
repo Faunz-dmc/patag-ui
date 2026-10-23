@@ -18,3 +18,23 @@ body:not(.citizen-mode) .sidebar{top:32px!important}body:not(.citizen-mode) .top
 .citizen-mode,.citizen-shell{background:var(--ground);color:var(--ink)}.citizen-topbar{background:var(--glass);backdrop-filter:blur(12px);border-bottom:1px solid var(--line);z-index:20}.citizen-topbar .icon-button{position:relative;background:var(--surface);color:var(--ink);min-height:44px;width:44px;height:44px}.citizen-topbar .unread-dot{position:absolute;top:7px;right:7px}.citizen-topbar img{background:transparent;padding:0}[data-theme=dark] .citizen-topbar img{filter:brightness(0) invert(1)}.citizen-topbar .header-actions{gap:5px}.citizen-main h1{font-size:32px;font-weight:600;line-height:1.16;letter-spacing:-1px}.citizen-main h2{font-family:Montserrat,sans-serif;font-weight:600;font-size:19px}.citizen-main p,.citizen-greeting span,.citizen-report-card small,.report-card-meta>span,.citizen-timeline li small{color:var(--slate)}.citizen-greeting p{font-size:26px;font-weight:600;letter-spacing:-.8px;color:var(--ink)}.citizen-hero{background:var(--primary-gradient);color:#20180f;padding:26px 22px;border:1px solid #f7a46d}.citizen-hero h1{font-size:32px}.citizen-hero p{color:#38271d}.citizen-hero .primary{background:var(--dark-gradient);color:#fff;border-radius:16px}.citizen-hero img{max-width:100%;width:140px}.citizen-impact,.tracking-summary{background:var(--dark-gradient);color:white;border:1px solid #38393b}.citizen-report-card,.citizen-card,.citizen-tip{background:var(--surface);border:1px solid var(--line);box-shadow:var(--shadow)}.citizen-tip>div:first-child{background:var(--raised)}.citizen-card p{color:var(--slate)}.citizen-bottom{background:#1b1c20ed;backdrop-filter:blur(12px);border-radius:26px;border:1px solid #444449;bottom:calc(10px + env(safe-area-inset-bottom));padding:7px}.citizen-bottom a{color:#dedee3;min-height:52px}.citizen-bottom a.active{background:#fff;color:#171717}.citizen-bottom .report-action{background:var(--primary-gradient);color:#20180f}.citizen-setting-link{border-color:var(--line)}.citizen-main{padding-bottom:calc(130px + env(safe-area-inset-bottom))}.citizen-upload{background:var(--raised)}.citizen-main .primary{border-radius:16px}.citizen-shell .notice-row.unread{background:var(--paper)}.role-links strong,.role-links span{color:var(--ink)}
 @media(max-width:360px){.citizen-topbar{padding:10px 16px}.citizen-topbar img{width:90px}.citizen-topbar .header-actions{gap:4px}.citizen-hero h1{font-size:28px}.citizen-hero{padding:22px 16px}.citizen-main{padding-left:16px;padding-right:16px}.citizen-impact{grid-template-columns:1fr 1.2fr;gap:14px}.citizen-greeting p{font-size:24px}}
 .citizen-avatar{color:#182b49}.citizen-tip{border-radius:20px;overflow:hidden}
+
+/* Citizen controls must pair their foreground and surface in each theme. */
+.citizen-main input,.citizen-main textarea,.citizen-main select{background:var(--surface);color:var(--ink);border-color:var(--line);color-scheme:inherit}
+.citizen-main input::placeholder,.citizen-main textarea::placeholder{color:var(--slate);opacity:1}
+.citizen-main select option{background:var(--surface);color:var(--ink)}
+.citizen-setting-link{background:var(--surface);color:var(--ink);border:1px solid var(--line)}
+.citizen-main .native-info{background:var(--raised);color:var(--ink)}
+.citizen-tip{padding:20px;align-items:flex-start;gap:14px}
+.citizen-tip>div:first-child{flex:0 0 40px;width:40px;height:40px;padding:0;display:grid;place-items:center;border-radius:12px}
+.citizen-tip>div:first-child svg{width:22px;height:22px;flex-shrink:0}
+.citizen-tip>div:last-child{flex:1;min-width:0}
+.citizen-main img.patag-mascot{background:#fff4e6;border-radius:24px;padding:12px;box-sizing:border-box;object-fit:contain}
+[data-theme=dark] .citizen-main img.patag-mascot{background:#e4ecf4}
+.citizen-hero img{transform:none;max-width:100%}
+.report-status-filters{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 16px}
+.report-status-filters button{min-height:44px;padding:10px 14px;border:1px solid var(--line);border-radius:14px;background:var(--surface);color:var(--ink);font-size:12px;font-weight:600}
+.report-status-filters button[aria-pressed=true]{background:var(--ink);color:var(--surface);border-color:var(--ink)}
+.report-status-filters button:focus-visible{outline:2px solid var(--orange);outline-offset:3px}
+.citizen-main .filters-native{margin-bottom:16px}
+.citizen-main .filters-native label{min-width:0;margin-bottom:0}

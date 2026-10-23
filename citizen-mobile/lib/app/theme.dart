@@ -114,6 +114,8 @@ ThemeData patagTheme({Brightness brightness = Brightness.light}) {
         filled: true,
         fillColor: colors.surface,
         labelStyle: TextStyle(color: colors.onSurfaceVariant, fontSize: 14),
+        hintStyle: TextStyle(color: colors.onSurfaceVariant),
+        helperStyle: TextStyle(color: colors.onSurfaceVariant),
         border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(16),
             borderSide: BorderSide(color: colors.outlineVariant)),
