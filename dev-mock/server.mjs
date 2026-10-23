@@ -3,7 +3,7 @@ import {readFile,writeFile,mkdir} from 'node:fs/promises';
 import {fileURLToPath} from 'node:url';
 import path from 'node:path';
 import {randomUUID,scryptSync,timingSafeEqual} from 'node:crypto';
-import {seed,teams,statuses,candidates,transition} from './domain.mjs';
+import {seed,teams,statuses,candidates,transition,publicReport} from './domain.mjs';
 export async function createServer({persist=true}={}){
  const dir=path.dirname(fileURLToPath(import.meta.url)),dataDir=path.join(dir,'data');let db=seed();const sessions=new Map();
  if(persist){await mkdir(dataDir,{recursive:true});try{db=JSON.parse(await readFile(path.join(dataDir,'db.json'),'utf8'));}catch{}}
@@ -36,7 +36,7 @@ export async function createServer({persist=true}={}){
    const match=/^\/reports\/([^/]+)(?:\/(events|feedback))?$/.exec(p);
    if(match){const r=db.reports.find(r=>r.id===match[1]);if(!r){send(404,{error:'Report not found.'});return;}if(user.role==='maintenance'&&r.teamId!==user.teamId||user.role==='citizen'&&r.reporterId!==user.id){send(403,{error:'This report belongs to another account or team.'});return;}
     if(req.method==='GET'){send(200,r);return;}
-    if(match[2]==='events'&&req.method==='POST'){if(body.action==='duplicate'&&!db.reports.some(x=>x.id===body.duplicateOf&&x.id!==r.id)){send(400,{error:'Original report not found.'});return;}if(body.action==='complete'&&(!body.photos?.every(x=>/^\/uploads\/[a-f0-9-]+\.(png|jpg|webp)$/.test(x.url)))){send(400,{error:'Upload real completion photos first.'});return;}transition(r,user.role,body.action,body);notify(r,body.action==='complete'?'Repair ready for LGU verification':`${r.id}: ${r.status}`);await save();send(200,r);return;}
+    if(match[2]==='events'&&req.method==='POST'){if(body.action==='duplicate'&&!db.reports.some(x=>x.id===body.duplicateOf&&x.id!==r.id)){send(400,{error:'Original report not found.'});return;}if(['complete','before-photos'].includes(body.action)&&(!body.photos?.every(x=>/^\/uploads\/[a-f0-9-]+\.(png|jpg|webp)$/.test(x.url)))){send(400,{error:'Upload real repair photos first.'});return;}transition(r,user.role,body.action,body);notify(r,body.action==='complete'?'Repair ready for LGU verification':`${r.id}: ${r.status}`);await save();send(200,r);return;}
     if(match[2]==='feedback'&&req.method==='POST'&&user.role==='citizen'){if(r.status!=='Resolved'||r.feedback){send(409,{error:'Feedback is available once for resolved reports.'});return;}if(!Number.isInteger(body.rating)||body.rating<1||body.rating>5||!body.text?.trim()){send(400,{error:'Choose a rating and add feedback.'});return;}r.feedback={rating:body.rating,text:body.text,at:new Date().toISOString()};await save();send(201,r.feedback);return;}
    }
    send(404,{error:'Endpoint not found.'});
@@ -46,6 +46,5 @@ export async function createServer({persist=true}={}){
  return server;
 }
 function publicUser({hash,salt,...u}){return u;}
-function publicReport({reporterId,assignment,jurisdiction,flagged,...r}){return {...r,history:r.history.map(({actor,...h})=>h)};}
 const validCoordinates=c=>c&&Number.isFinite(c.lat)&&Number.isFinite(c.lng)&&Math.abs(c.lat)<=90&&Math.abs(c.lng)<=180;
 if(process.argv[1]===fileURLToPath(import.meta.url)){const server=await createServer();server.listen(4100,'127.0.0.1',()=>console.log('PATAG development API http://127.0.0.1:4100/api (fictional demo data)'));}

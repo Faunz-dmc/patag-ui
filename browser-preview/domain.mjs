@@ -20,10 +20,21 @@ export function transition(report,role,action,payload={}){
   else if(action==='return'&&report.completion?.state==='Awaiting Verification'){if(!payload.note?.trim())fail('Explain the additional work.');next='In Progress';report.completion.state='Additional Work Requested';}
   else fail('This action is not allowed from the current report status.');
  }else if(role==='maintenance'){
-  if(action==='start'&&current==='Assigned')next='In Progress';
+  if(action==='before-photos'&&['Assigned','In Progress'].includes(current)&&report.completion?.state!=='Awaiting Verification'){if(!payload.photos?.length)fail('Upload before-repair photos.');report.photos.push(...payload.photos.map(p=>({...p,kind:'before'})));}
+  else if(action==='start'&&current==='Assigned')next='In Progress';
   else if(action==='progress'&&current==='In Progress'){if(!payload.note?.trim())fail('Add a progress note.');report.updates.push({at:new Date().toISOString(),note:payload.note,phase:payload.phase||'Repair',photos:payload.photos||[]});}
   else if(action==='complete'&&current==='In Progress'&&report.completion?.state!=='Awaiting Verification'){if(!payload.note?.trim()||!payload.photos?.length)fail('Repair notes and after photos are required.');report.completion={state:'Awaiting Verification',note:payload.note,photos:payload.photos,at:new Date().toISOString()};}
   else fail('Maintenance can start work, update progress or submit evidence; LGU verification is required for resolution.');
  }else fail('Only operational roles can change report status.');
  report.status=next;report.updatedAt=new Date().toISOString();report.history.push({id:crypto.randomUUID(),at:report.updatedAt,actor:role,action,from:current,to:next,note:payload.note||''});return report;
+}
+
+// Public maps expose road progress, not account, assignment or private note data.
+export function publicReport(r){
+ const photo=p=>({id:p.id,url:p.url,kind:p.kind,name:'Road evidence',...(p.demo?{demo:true}:{})});
+ return {id:r.id,title:`Pothole on ${r.location.road}`,description:`Reported road damage. Current status: ${r.status}.`,severity:r.severity,status:r.status,
+  location:{road:r.location.road,barangay:r.location.barangay,city:r.location.city,province:r.location.province,coordinates:r.location.coordinates},
+  createdAt:r.createdAt,updatedAt:r.updatedAt,photos:r.photos.map(photo),
+  history:r.history.filter(h=>h.from!==h.to||h.action==='complete').map(h=>({id:h.id,at:h.at,action:h.action,from:h.from,to:h.to,note:h.action==='complete'?'Repair submitted for LGU verification.':`Status updated to ${h.to}.`})),
+  completion:r.completion?{state:r.completion.state,at:r.completion.at,photos:r.completion.photos.map(photo),note:'Repair evidence submitted for administrative review.'}:null};
 }

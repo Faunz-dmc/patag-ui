@@ -35,7 +35,7 @@ Base: web `VITE_API_URL=http://127.0.0.1:4100/api`; Android emulator `--dart-def
 | POST /auth/recovery | public | email -> demo confirmation, no email sent |
 | POST /auth/logout | authenticated | invalidates current token |
 | GET /bootstrap | authenticated | reports owned by citizen/team or all for admin; teams, authorized users, scoped notifications, user, statuses |
-| GET /public/reports | public | safe reports, excludes Rejected/Duplicate and reporter identity/assignment/jurisdiction/reviewer actor |
+| GET /public/reports | public | allowlisted road/status/evidence records, excludes Rejected/Duplicate, identity, assignment, internal notes, landmarks and feedback |
 | GET /reports/:id | owner/team/admin | report detail |
 | POST /uploads | authenticated | data (base64 PNG/JPEG/WebP <=8 MB), name, kind -> ReportPhoto |
 | POST /reports | citizen | report fields below; service sets owner, Submitted status and history |
@@ -51,6 +51,8 @@ Base: web `VITE_API_URL=http://127.0.0.1:4100/api`; Android emulator `--dart-def
 ```json
 {"title":"Damaged outer lane","description":"Pothole beside the crossing.","hazards":"Water collects after rain.","severity":"High","photos":[{"id":"upload-id","url":"/uploads/uuid.png","name":"road.png","kind":"before"}],"location":{"road":"Test Road","barangay":"Guinhawa","city":"Malolos","province":"Bulacan","landmark":"Waiting shed","coordinates":{"lat":14.852,"lng":120.811}}}
 ```
+
+Maintenance can also send `before-photos` with uploaded `photos` while Assigned or In Progress (except while awaiting verification); original evidence is retained.
 
 ## Event examples
 

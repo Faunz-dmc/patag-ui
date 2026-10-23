@@ -1,9 +1,8 @@
-import {seed,teams,statuses,candidates,transition} from './domain.mjs';
+import {seed,teams,statuses,candidates,transition,publicReport} from './domain.mjs';
 const KEY='patag-hosted-preview-v1';
 let memory;
 function read(){try{return JSON.parse(localStorage.getItem(KEY))||seed()}catch{return memory||seed()}}
 function save(db){memory=db;try{localStorage.setItem(KEY,JSON.stringify(db))}catch{throw Object.assign(Error('Browser storage is full. Remove large preview photos or reset this demo.'),{status:400})}}
-const publicReport=({reporterId,assignment,jurisdiction,flagged,...r})=>({...r,history:r.history.map(({actor,...entry})=>entry)});
 const response=(data,status=200)=>new Response(JSON.stringify(data),{status,headers:{'Content-Type':'application/json'}});
 export async function enterRole(role){const r=await fetch('/api/auth/demo',{method:'POST',body:JSON.stringify({role})});const d=await r.json();sessionStorage.setItem('patag-token',d.token);}
 export function installPreviewApi(){

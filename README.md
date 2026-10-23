@@ -2,7 +2,9 @@
 
 Pa-tag lubak, lubak patag.
 
-Academic IT 305 project: a native Flutter citizen application and two independent React/TypeScript/Vite portals for LGU review and road maintenance. Source covers all 55 expanded route entries. Both web portals build and pass a tested cross-role demonstration. Flutter analysis and all 25 tests pass. The Android debug APK builds; emulator inspection remains blocked by the missing hypervisor driver. This is not a production-ready system.
+Academic IT 305 project: a native Flutter citizen application and two independent React/TypeScript/Vite portals for LGU review and road maintenance. Source covers all 55 expanded route entries. Both web portals build and pass a tested cross-role demonstration. Flutter analysis and all 26 tests pass. The Android debug APK builds; emulator inspection remains blocked by the missing hypervisor driver. This is not a production-ready system.
+
+See the [24 October PDF requirements and UX audit](docs/project2-audit/audit.md) for requirement coverage, corrections, and outstanding acceptance gates.
 
 ## Structure
 
@@ -25,7 +27,7 @@ Rebuild with `npm run build:preview` after installing dependencies in both web f
 
 ## Prerequisites and observed environment
 
-Node 24, npm 11, Flutter 3.47.6 and Dart 3.13.5 were used. Both web builds, API tests, Flutter analysis and all 25 Flutter tests passed. The Android SDK and an existing AVD were found. The Android debug APK build succeeded. The existing AVD cannot start because its hypervisor driver is missing; native emulator validation remains outstanding. Earlier sandbox Dart errors were resolved by running authorized tooling outside that sandbox.
+Node 24, npm 11, Flutter 3.47.6 and Dart 3.13.5 were used. Both web builds, API tests, Flutter analysis and all 26 Flutter tests passed. The Android SDK and an existing AVD were found. The Android debug APK build succeeded. The existing AVD cannot start because its hypervisor driver is missing; native emulator validation remains outstanding. Earlier sandbox Dart errors were resolved by running authorized tooling outside that sandbox.
 
 ## Run locally (PowerShell)
 

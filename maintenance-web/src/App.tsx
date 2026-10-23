@@ -1359,6 +1359,19 @@ function Details({ mode = "detail" }: { mode?: string }) {
       setBusy(false);
     }
   };
+  const pickBefore = async (files: FileList | null) => {
+    if (!files?.length) return;
+    setBusy(true);
+    setError("");
+    try {
+      const evidence: Photo[] = [];
+      for (const file of Array.from(files)) evidence.push(await upload(file, "before"));
+      await event(r.id, "before-photos", { photos: evidence, note: "Maintenance before-repair evidence added." });
+      notify("Before-repair evidence saved.");
+    } catch (error) {
+      setError((error as Error).message);
+    } finally { setBusy(false); }
+  };
   const pick = async (files: FileList | null) => {
     if (!files) return;
     setBusy(true);
@@ -1414,6 +1427,14 @@ function Details({ mode = "detail" }: { mode?: string }) {
             aside={<Badge value={r.severity} />}
           >
             <Gallery photos={r.photos} label="Before repair" />
+            {!admin && ["Assigned", "In Progress"].includes(r.status) && r.completion?.state !== "Awaiting Verification" && (
+              <label className="upload">
+                <Camera size={20} />
+                <strong>Add before-repair photos</strong>
+                <span>Document the site before work. Original citizen evidence is kept.</span>
+                <input type="file" accept="image/png,image/jpeg,image/webp" multiple disabled={busy} aria-label="Before-repair photos" onChange={(e) => { void pickBefore(e.target.files); e.target.value = ""; }} />
+              </label>
+            )}
             <h3>{r.title}</h3>
             <p>{r.description}</p>
             <dl className="detail-list">
