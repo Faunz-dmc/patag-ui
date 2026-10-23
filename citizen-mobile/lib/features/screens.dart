@@ -530,7 +530,7 @@ class CitizenHome extends StatelessWidget {
                                 color: Color(0xFF38271D),
                                 height: 1.5))),
                     const SizedBox(width: 12),
-                    Expanded(flex: 2, child: mascot(width: 100)),
+                    Expanded(flex: 2, child: mascot(width: 100, dance: true)),
                   ]),
                   gap(22),
                   action(

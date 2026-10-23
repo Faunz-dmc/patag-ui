@@ -29,9 +29,10 @@ body:not(.citizen-mode) .sidebar{top:32px!important}body:not(.citizen-mode) .top
 .citizen-tip>div:first-child{flex:0 0 40px;width:40px;height:40px;padding:0;display:grid;place-items:center;border-radius:12px}
 .citizen-tip>div:first-child svg{width:22px;height:22px;flex-shrink:0}
 .citizen-tip>div:last-child{flex:1;min-width:0}
-.citizen-main img.patag-mascot{background:#fff4e6;border-radius:24px;padding:12px;box-sizing:border-box;object-fit:contain}
-[data-theme=dark] .citizen-main img.patag-mascot{background:#e4ecf4}
-.citizen-hero img{transform:none;max-width:100%}
+.citizen-main img.patag-mascot{background:transparent;border-radius:0;padding:0;object-fit:contain;filter:drop-shadow(1px 0 0 #fff4e6) drop-shadow(-1px 0 0 #fff4e6) drop-shadow(0 1px 0 #fff4e6) drop-shadow(0 -1px 0 #fff4e6)}
+.citizen-hero img{max-width:100%;transform-origin:50% 85%;animation:mascot-dance 2.4s ease-in-out infinite}
+@keyframes mascot-dance{0%,100%{transform:translateY(0) rotate(-5deg)}25%{transform:translateY(-7px) rotate(6deg)}50%{transform:translateY(0) rotate(-5deg)}75%{transform:translateY(-5px) rotate(5deg)}}
+@media(prefers-reduced-motion:reduce){.citizen-hero img{animation:none;transform:none}}
 .report-status-filters{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 16px}
 .report-status-filters button{min-height:44px;padding:10px 14px;border:1px solid var(--line);border-radius:14px;background:var(--surface);color:var(--ink);font-size:12px;font-weight:600}
 .report-status-filters button[aria-pressed=true]{background:var(--ink);color:var(--surface);border-color:var(--ink)}

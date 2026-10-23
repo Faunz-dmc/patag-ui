@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import '../../app/theme.dart';
@@ -18,17 +19,82 @@ Widget logo({double width = 135}) => Builder(
             : null,
         colorBlendMode: BlendMode.srcIn,
         semanticLabel: 'PATAG'));
-Widget mascot({double width = 160}) => Builder(
-    builder: (context) => Container(
-        width: width,
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-            color: Theme.of(context).brightness == Brightness.dark
-                ? const Color(0xFFE4ECF4)
-                : const Color(0xFFFFF4E6),
-            borderRadius: BorderRadius.circular(24)),
-        child: Image.asset('assets/images/patag-mascot.png',
-            fit: BoxFit.contain, excludeFromSemantics: true)));
+Widget mascot({double width = 160, bool dance = false}) =>
+    DancingMascot(width: width, dance: dance);
+
+class DancingMascot extends StatefulWidget {
+  final double width;
+  final bool dance;
+  const DancingMascot({super.key, required this.width, this.dance = false});
+  @override
+  State<DancingMascot> createState() => _DancingMascotState();
+}
+
+class _DancingMascotState extends State<DancingMascot>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController controller = AnimationController(
+      vsync: this, duration: const Duration(milliseconds: 2400));
+  void syncMotion() {
+    if (widget.dance && !MediaQuery.disableAnimationsOf(context)) {
+      if (!controller.isAnimating) controller.repeat();
+    } else {
+      controller.stop();
+      controller.value = 0;
+    }
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    syncMotion();
+  }
+
+  @override
+  void didUpdateWidget(covariant DancingMascot oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    syncMotion();
+  }
+
+  @override
+  void dispose() {
+    controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => AnimatedBuilder(
+      animation: controller,
+      child: SizedBox(
+          width: widget.width,
+          child: Stack(children: [
+            for (final offset in [
+              const Offset(-1, 0),
+              const Offset(1, 0),
+              const Offset(0, -1),
+              const Offset(0, 1)
+            ])
+              Transform.translate(
+                  offset: offset,
+                  child: Image.asset('assets/images/patag-mascot.png',
+                      width: widget.width,
+                      color: const Color(0xFFFFF4E6),
+                      colorBlendMode: BlendMode.srcIn,
+                      excludeFromSemantics: true)),
+            Image.asset('assets/images/patag-mascot.png',
+                width: widget.width, excludeFromSemantics: true),
+          ])),
+      builder: (context, child) {
+        final moving = widget.dance && !MediaQuery.disableAnimationsOf(context);
+        final wave = moving ? math.sin(controller.value * math.pi * 4) : 0.0;
+        return Transform.translate(
+            offset: Offset(0, -wave.abs() * 6),
+            child: Transform.rotate(
+                angle: wave * .09,
+                alignment: Alignment.bottomCenter,
+                child: child));
+      });
+}
+
 Widget heading(BuildContext c, String text) =>
     Text(text, style: Theme.of(c).textTheme.headlineMedium);
 Widget gap([double height = 16]) => SizedBox(height: height);

@@ -259,6 +259,17 @@ class _PublicMapState extends State<PublicMap> {
         if (!list)
           RoadMap(key: ValueKey(gps), reports: reports, pin: gps, height: 420),
         gap(16),
+        const Text('Community reports',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
+        gap(12),
+        Wrap(spacing: 8, runSpacing: 8, children: [
+          for (final s in ['All', ...reportStatuses])
+            ChoiceChip(
+                label: Text(s),
+                selected: status == s,
+                onSelected: (_) => setState(() => status = s)),
+        ]),
+        gap(16),
         if (reports.isEmpty)
           const EmptyState('No reports nearby', 'Try a different filter.'),
         if (list) ...reports.map((report) => ReportCard(report, public: true)),

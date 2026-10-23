@@ -1,3 +1,4 @@
+import 'package:patag_citizen/shared/widgets/ui.dart';
 import 'dart:io';
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
@@ -9,6 +10,14 @@ import 'package:patag_citizen/app/theme.dart';
 import 'package:patag_citizen/features/screens.dart';
 
 void main() {
+  final binding = TestWidgetsFlutterBinding.ensureInitialized();
+  setUp(() {
+    binding.platformDispatcher.accessibilityFeaturesTestValue =
+        const FakeAccessibilityFeatures(disableAnimations: true);
+  });
+  tearDown(() {
+    binding.platformDispatcher.clearAccessibilityFeaturesTestValue();
+  });
   TestWidgetsFlutterBinding.ensureInitialized();
   setUpAll(() async {
     final loader = FontLoader('Montserrat')
@@ -84,6 +93,26 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byTooltip('Switch to light mode'), findsOneWidget);
     expect(themeController.mode, ThemeMode.dark);
+    expect(tester.takeException(), isNull);
+  });
+  testWidgets('mascot dances and stops for reduced motion', (tester) async {
+    binding.platformDispatcher.accessibilityFeaturesTestValue =
+        const FakeAccessibilityFeatures(disableAnimations: false);
+    await tester
+        .pumpWidget(MaterialApp(home: Scaffold(body: mascot(dance: true))));
+    final artwork = find
+        .descendant(
+            of: find.byType(DancingMascot), matching: find.byType(Image))
+        .last;
+    final initial = tester.getTopLeft(artwork);
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(tester.getTopLeft(artwork), isNot(initial));
+    binding.platformDispatcher.accessibilityFeaturesTestValue =
+        const FakeAccessibilityFeatures(disableAnimations: true);
+    await tester.pumpAndSettle();
+    final stationary = tester.getTopLeft(artwork);
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(tester.getTopLeft(artwork), stationary);
     expect(tester.takeException(), isNull);
   });
 }
