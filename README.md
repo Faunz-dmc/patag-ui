@@ -2,7 +2,7 @@
 
 Pa-tag lubak, lubak patag.
 
-Academic IT 305 project: a native Flutter citizen application and two independent React/TypeScript/Vite portals for LGU review and road maintenance. Source covers all 55 expanded route entries. Both web portals build and pass a tested cross-role demonstration. Flutter analysis and all 13 tests pass. The Android debug APK builds; emulator inspection remains blocked by the missing hypervisor driver. This is not a production-ready system.
+Academic IT 305 project: a native Flutter citizen application and two independent React/TypeScript/Vite portals for LGU review and road maintenance. Source covers all 55 expanded route entries. Both web portals build and pass a tested cross-role demonstration. Flutter analysis and all 25 tests pass. The Android debug APK builds; emulator inspection remains blocked by the missing hypervisor driver. This is not a production-ready system.
 
 ## Structure
 
@@ -21,11 +21,11 @@ Use fictional accounts/data only. There are no real LGU partnerships, repair rec
 
 Open [preview/Open-PATAG.html](preview/Open-PATAG.html) directly in Chrome or Edge. Choose Citizen, LGU / Admin or Maintenance. No local server is needed. This is a functioning demo with fictional browser-local data, not a screenshot gallery. The citizen preview is a separate approved browser demo; the native application remains Flutter. Map tiles require internet.
 
-Rebuild with `npm run build:preview` after installing dependencies in both web folders. See [redesign validation](docs/redesign-validation.md), [design audit](docs/ui-redesign-audit.md) and [design system](docs/design-system.md).
+Rebuild with `npm run build:preview` after installing dependencies in both web folders. See [23 October visual-system validation](docs/visual-system/validation.md), [previous redesign validation](docs/redesign-validation.md), [design audit](docs/ui-redesign-audit.md) and [design system](docs/design-system.md).
 
 ## Prerequisites and observed environment
 
-Node 24, npm 11, Flutter 3.47.6 and Dart 3.13.5 were used. Both web builds, API tests, Flutter analysis and all 13 Flutter tests passed. The Android SDK and an existing AVD were found. The Android debug APK build succeeded. The existing AVD cannot start because its hypervisor driver is missing; native emulator validation remains outstanding. Earlier sandbox Dart errors were resolved by running authorized tooling outside that sandbox.
+Node 24, npm 11, Flutter 3.47.6 and Dart 3.13.5 were used. Both web builds, API tests, Flutter analysis and all 25 Flutter tests passed. The Android SDK and an existing AVD were found. The Android debug APK build succeeded. The existing AVD cannot start because its hypervisor driver is missing; native emulator validation remains outstanding. Earlier sandbox Dart errors were resolved by running authorized tooling outside that sandbox.
 
 ## Run locally (PowerShell)
 
@@ -57,7 +57,7 @@ npm run dev
 
 Open http://127.0.0.1:5174/maintenance/login and choose **Continue as Road Crew Alpha**. Seeded accounts use demo access, not invented passwords. New citizen accounts can register with hashed passwords on the local API.
 
-Native citizen app, after toolchain repair:
+Native citizen app:
 
 ```powershell
 cd citizen-mobile

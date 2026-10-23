@@ -7,7 +7,9 @@
     "test:api": "node --test dev-mock/server.test.mjs",
     "build:web": "npm --prefix admin-web run build && npm --prefix maintenance-web run build",
     "build:preview": "node scripts/build-preview.mjs",
+    "preview:server": "node scripts/serve-preview.mjs",
     "test:preview": "node scripts/qa/preview-workflow.mjs",
-    "test:preview-routes": "node scripts/qa/preview-routes.mjs"
+    "test:preview-routes": "node scripts/qa/preview-routes.mjs",
+    "test:visual-system": "node scripts/qa/visual-system.mjs"
   }
 }

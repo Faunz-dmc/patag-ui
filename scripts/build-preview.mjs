@@ -5,7 +5,7 @@ const project=path.resolve(import.meta.dirname,'..'), dist=path.join(project,'br
 const scratch=path.join(dist,'.build');await fs.mkdir(scratch,{recursive:true});
 const {build}=await import(pathToFileURL(path.join(project,'admin-web/node_modules/vite/dist/node/index.js')));
 const assets={};
-for(const [file,mime] of [['assets/patag-logo.png','image/png'],['assets/patag-mascot.png','image/png'],['assets/LilitaOne-Regular.ttf','font/ttf'],['api/demo-evidence.svg','image/svg+xml'],['api/demo-after.svg','image/svg+xml']])assets['/'+file]='data:'+mime+';base64,'+(await fs.readFile(path.join(dist,file))).toString('base64');
+for(const [file,mime] of [['assets/patag-logo.png','image/png'],['assets/patag-mascot.png','image/png'],['assets/LilitaOne-Regular.ttf','font/ttf'],['assets/Montserrat.ttf','font/ttf'],['api/demo-evidence.svg','image/svg+xml'],['api/demo-after.svg','image/svg+xml']])assets['/'+file]='data:'+mime+';base64,'+(await fs.readFile(path.join(dist,file))).toString('base64');
 const inlineAssets=code=>Object.entries(assets).reduce((s,[key,value])=>s.replaceAll(key,value),code);
 let api=await fs.readFile(path.join(dist,'preview-api.mjs'),'utf8');
 api=api.replace("'./domain.mjs'",JSON.stringify(path.join(dist,'domain.mjs').replaceAll('\\','/'))).replace('location.origin',"'http://patag-preview.local'");

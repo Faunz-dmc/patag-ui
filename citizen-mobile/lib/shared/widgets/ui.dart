@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import '../../app/theme.dart';
 import '../../core/api.dart';
@@ -9,8 +10,14 @@ void home(BuildContext context) =>
     Navigator.of(context).pushNamedAndRemoveUntil('/home', (route) => false);
 void message(BuildContext context, String text) =>
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(text)));
-Widget logo({double width = 135}) => Image.asset('assets/images/patag-logo.png',
-    width: width, semanticLabel: 'PATAG');
+Widget logo({double width = 135}) => Builder(
+    builder: (context) => Image.asset('assets/images/patag-logo.png',
+        width: width,
+        color: Theme.of(context).brightness == Brightness.dark
+            ? Colors.white
+            : null,
+        colorBlendMode: BlendMode.srcIn,
+        semanticLabel: 'PATAG'));
 Widget mascot({double width = 160}) =>
     Image.asset('assets/images/patag-mascot.png',
         width: width, excludeFromSemantics: true);
@@ -18,14 +25,26 @@ Widget heading(BuildContext c, String text) =>
     Text(text, style: Theme.of(c).textTheme.headlineMedium);
 Widget gap([double height = 16]) => SizedBox(height: height);
 Widget action(String label, VoidCallback? press,
-        {IconData icon = Icons.arrow_forward}) =>
-    FilledButton(
-        onPressed: press,
-        child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-          Flexible(child: Text(label, textAlign: TextAlign.center)),
-          const SizedBox(width: 10),
-          Icon(icon, size: 18)
-        ]));
+        {IconData icon = Icons.arrow_forward, bool dark = false}) =>
+    DecoratedBox(
+        decoration: BoxDecoration(
+            gradient: press == null
+                ? null
+                : dark
+                    ? PatagTokens.darkGradient
+                    : PatagTokens.primaryGradient,
+            borderRadius: BorderRadius.circular(16)),
+        child: FilledButton(
+            style: FilledButton.styleFrom(
+                backgroundColor: Colors.transparent,
+                shadowColor: Colors.transparent,
+                foregroundColor: dark ? Colors.white : const Color(0xFF20180F)),
+            onPressed: press,
+            child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+              Flexible(child: Text(label, textAlign: TextAlign.center)),
+              const SizedBox(width: 10),
+              Icon(icon, size: 18)
+            ])));
 Widget field(String label, TextEditingController ctrl,
         {int lines = 1,
         TextInputType? keyboard,
@@ -81,7 +100,8 @@ class Evidence extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Icon(Icons.add_road, size: 46, color: ink),
-                    Text('Illustrated demo evidence')
+                    Text('Illustrated demo evidence',
+                        style: TextStyle(color: ink))
                   ]))
           : Image.network(store.photoUrl(photo['url']),
               height: 190,
@@ -137,7 +157,11 @@ class ReportCard extends StatelessWidget {
                               fontSize: 15, fontWeight: FontWeight.w600)),
                       gap(4),
                       Text('Brgy. ${report.barangay}',
-                          style: const TextStyle(fontSize: 12, color: slate)),
+                          style: TextStyle(
+                              fontSize: 12,
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onSurfaceVariant)),
                       gap(10),
                       Wrap(
                           spacing: 8,
@@ -145,8 +169,11 @@ class ReportCard extends StatelessWidget {
                           crossAxisAlignment: WrapCrossAlignment.center,
                           children: [
                             Text(report.id,
-                                style: const TextStyle(
-                                    fontSize: 11, color: slate)),
+                                style: TextStyle(
+                                    fontSize: 11,
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onSurfaceVariant)),
                             StatusChip(report.severity)
                           ])
                     ]))
@@ -165,7 +192,9 @@ class EmptyState extends StatelessWidget {
         heading(context, title),
         gap(10),
         Text(text,
-            textAlign: TextAlign.center, style: const TextStyle(color: slate))
+            textAlign: TextAlign.center,
+            style: TextStyle(
+                color: Theme.of(context).colorScheme.onSurfaceVariant))
       ]));
 }
 
@@ -183,12 +212,20 @@ class Screen extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Scaffold(
       appBar: AppBar(
+          flexibleSpace: ClipRect(
+              child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+                  child: const SizedBox.expand())),
           title: title == 'PATAG'
               ? logo(width: 108)
               : Text(title,
                   style: const TextStyle(
                       fontSize: 17, fontWeight: FontWeight.w600)),
-          actions: actions),
+          actions: [
+            ...?actions,
+            const ThemeToggle(),
+            const SizedBox(width: 8)
+          ]),
       body: SafeArea(
           child: Column(children: [
         if (store.networkError != null)
@@ -207,6 +244,23 @@ class Screen extends StatelessWidget {
           selected == null ? null : PatagNavigation(selected: selected!));
 }
 
+class ThemeToggle extends StatelessWidget {
+  const ThemeToggle({super.key});
+  @override
+  Widget build(BuildContext context) {
+    final dark = Theme.of(context).brightness == Brightness.dark;
+    return IconButton.filledTonal(
+      tooltip: dark ? 'Switch to light mode' : 'Switch to dark mode',
+      style: IconButton.styleFrom(
+          backgroundColor:
+              Theme.of(context).colorScheme.surfaceContainerHighest),
+      onPressed: () => themeController.toggle(Theme.of(context).brightness),
+      icon: Icon(dark ? Icons.light_mode_outlined : Icons.dark_mode_outlined,
+          size: 21),
+    );
+  }
+}
+
 class PatagNavigation extends StatelessWidget {
   final int selected;
   const PatagNavigation({required this.selected, super.key});
@@ -218,7 +272,8 @@ class PatagNavigation extends StatelessWidget {
           child: Container(
               padding: const EdgeInsets.all(6),
               decoration: BoxDecoration(
-                  color: ink, borderRadius: BorderRadius.circular(40)),
+                  gradient: PatagTokens.darkGradient,
+                  borderRadius: BorderRadius.circular(28)),
               child: Row(
                   children: List.generate(5, (i) {
                 final active = selected == i;
@@ -393,7 +448,13 @@ class WizardSteps extends StatelessWidget {
                             Text(['Photo', 'Location', 'Details', 'Review'][i],
                                 style: TextStyle(
                                     fontSize: 12,
-                                    color: i == current ? ink : slate,
+                                    color: i == current
+                                        ? Theme.of(context)
+                                            .colorScheme
+                                            .onSurface
+                                        : Theme.of(context)
+                                            .colorScheme
+                                            .onSurfaceVariant,
                                     fontWeight: i == current
                                         ? FontWeight.w600
                                         : FontWeight.normal))

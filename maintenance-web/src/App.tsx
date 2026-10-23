@@ -1,4 +1,5 @@
 import {
+  Fragment,
   createContext,
   useCallback,
   useContext,
@@ -23,6 +24,8 @@ import {
   ArrowRight,
   ArrowLeft,
   Bell,
+  Sun,
+  Moon,
   MapPin,
   LayoutDashboard,
   ClipboardList,
@@ -70,6 +73,8 @@ import { role } from "./config";
 import "leaflet/dist/leaflet.css";
 import "./styles/app.css";
 import "./styles/premium.css";
+import "./styles/visual-system.css";
+import { useTheme } from "./theme";
 
 const admin = role === "admin",
   base = admin ? "/admin" : "/maintenance";
@@ -387,10 +392,18 @@ function Login() {
   );
 }
 function Shell() {
+  const { theme, toggleTheme } = useTheme();
+  const [isMobile, setIsMobile] = useState(() => window.innerWidth < 1024);
+  useEffect(() => {
+    const query = window.matchMedia("(max-width: 1023px)");
+    const update = () => setIsMobile(query.matches);
+    query.addEventListener("change", update);
+    return () => query.removeEventListener("change", update);
+  }, []);
   const [data, setData] = useState<Bootstrap | null>(null),
     [error, setError] = useState(""),
     [toast, setToast] = useState(""),
-    [menu, setMenu] = useState(false);
+    [menu, setMenu] = useState(() => window.innerWidth >= 1024 && localStorage.getItem("patag-sidebar") !== "collapsed");
   const loc = useLocation(),
     nav = useNavigate();
   const refresh = useCallback(async () => {
@@ -422,9 +435,28 @@ function Shell() {
     return () => clearInterval(t);
   }, [nav, refresh]);
   useEffect(() => {
-    setMenu(false);
+    if (window.innerWidth < 1024) setMenu(false);
     window.scrollTo(0, 0);
   }, [loc.pathname]);
+  useEffect(() => {
+    if (!menu || !isMobile) return;
+    const drawer = document.getElementById("workspace-navigation");
+    const previous = document.activeElement as HTMLElement | null;
+    const controls = () => Array.from(drawer?.querySelectorAll<HTMLElement>('a, button') ?? []);
+    controls()[0]?.focus();
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") { e.preventDefault(); setMenu(false); }
+      if (e.key === "Tab") {
+        const items = controls(), first = items[0], last = items[items.length - 1];
+        if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last?.focus(); }
+        if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first?.focus(); }
+      }
+    };
+    document.addEventListener("keydown", onKey);
+    const overflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => { document.removeEventListener("keydown", onKey); document.body.style.overflow = overflow; previous?.focus(); };
+  }, [menu, isMobile]);
   useEffect(() => {
     if (toast) {
       const t = setTimeout(() => setToast(""), 5000);
@@ -462,7 +494,8 @@ function Shell() {
         Skip to content
       </a>
       <div className={menu ? "shell menu-expanded" : "shell"}>
-        <aside aria-label="Workspace navigation" className={menu ? "sidebar open" : "sidebar"}>
+        <aside id="workspace-navigation" aria-label="Workspace navigation" className={menu ? "sidebar open" : "sidebar"}>
+          <button className="icon-button drawer-close" aria-label="Close navigation drawer" onClick={() => setMenu(false)}><X size={20} /></button>
           <Link to={base + "/dashboard"} aria-label="PATAG overview">
             <Logo />
           </Link>
@@ -475,34 +508,28 @@ function Shell() {
               </small>
             </div>
           </div>
-          <p className="nav-label">Workspace</p>
           <nav aria-label="Main navigation">
-            {navigation.map(([path, label, Icon]) => (
-              <NavLink key={String(path)} title={String(label)} aria-label={String(label)} to={base + "/" + path}>
-                <Icon size={18} />
-                <span>{String(label)}</span>
-                {path === "verification" && (
-                  <b>
-                    {
-                      data.reports.filter((r) =>
-                        ["Submitted", "Under Review"].includes(r.status),
-                      ).length
-                    }
-                  </b>
-                )}
-              </NavLink>
-            ))}
+            {(admin ? [
+              ["Overview", ["dashboard", "analytics"]],
+              ["Report management", ["reports", "verification", "duplicates", "map"]],
+              ["Operations", ["assignments", "completions", "teams"]],
+              ["Management", ["users", "exports"]],
+              ["System", ["activity"]],
+            ] : [
+              ["Overview", ["dashboard", "map"]],
+              ["Field operations", ["assignments", "progress", "submissions"]],
+              ["Records", ["history"]],
+            ]).map(([label, paths]) => <Fragment key={String(label)}>
+              <p className="nav-label">{String(label)}</p>
+              {navigation.filter(([path]) => (paths as string[]).includes(String(path))).map(([path, label, Icon]) => (
+                <NavLink key={String(path)} title={String(label)} aria-label={String(label)} to={base + "/" + path}>
+                  <Icon size={18} /><span>{String(label)}</span>
+                  {path === "verification" && <b>{data.reports.filter(r => ["Submitted", "Under Review"].includes(r.status)).length}</b>}
+                </NavLink>
+              ))}
+            </Fragment>)}
           </nav>
           <div className="nav-bottom">
-            <NavLink title="Notifications" aria-label="Notifications" to={base + "/notifications"}>
-              <Bell size={18} />
-              <span className="nav-text">Notifications</span>
-              {localStorage.getItem("patag-notification-preference") !==
-                "off" &&
-                data.notifications.some((n) => !n.read) && (
-                  <span className="unread-dot" />
-                )}
-            </NavLink>
             <NavLink title="Profile and settings" aria-label="Profile and settings" to={base + (admin ? "/settings" : "/profile")}>
               <Settings size={18} />
               <span className="nav-text">{admin ? "Settings" : "Profile & settings"}</span>
@@ -535,24 +562,29 @@ function Shell() {
             </div>
           </div>
         </aside>
+        {menu && <button className="drawer-backdrop" aria-label="Close navigation overlay" onClick={() => setMenu(false)} />}
         <div className="workspace-main">
           <div className="topbar">
             <button
               className="icon-button mobile-menu"
               aria-label={menu ? "Close navigation" : "Open navigation"}
               aria-expanded={menu}
-              onClick={() => setMenu(!menu)}
+              aria-controls="workspace-navigation"
+              onClick={() => { setMenu(!menu); if (window.innerWidth >= 1024) localStorage.setItem("patag-sidebar", menu ? "collapsed" : "expanded"); }}
             >
               {menu ? <X size={22} /> : <Menu size={22} />}
             </button>
             <Link className="topbar-brand" to={base + '/dashboard'} aria-label="PATAG home"><Logo /></Link>
             <nav className="topnav" aria-label="Primary workspace">
-              {(admin ? [['dashboard','Overview'],['reports','Reports'],['assignments','Assignments'],['analytics','Analytics']] : [['dashboard','Overview'],['assignments','My tasks'],['map','Task map'],['history','History']]).map(([path,label])=><NavLink key={path} to={base+'/'+path}>{label}</NavLink>)}
+              {(admin ? [['dashboard','Overview'],['reports','Reports'],['assignments','Operations'],['users','User management']] : [['dashboard','Overview'],['assignments','My tasks'],['map','Task map'],['history','History']]).map(([path,label])=><NavLink key={path} to={base+'/'+path}>{label}</NavLink>)}
             </nav>
             <span className="workspace-caption">{admin ? 'Malolos · LGU' : 'Road Crew Alpha'}</span>
-            <Link to={base + "/notifications"} className="notification-link">
+            <button className="icon-button theme-toggle" onClick={toggleTheme} aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"} title={theme === "dark" ? "Light mode" : "Dark mode"}>
+              {theme === "dark" ? <Sun size={19} /> : <Moon size={19} />}
+            </button>
+            <Link to={base + "/notifications"} className="notification-link" aria-label={"Notifications" + (data.notifications.some(n => !n.read) ? ", unread updates" : "")}>
               <Bell size={18} />
-              <span>Activity</span>
+              {localStorage.getItem("patag-notification-preference") !== "off" && data.notifications.some(n => !n.read) && <i className="unread-dot" />}
             </Link>
           </div>
           <main id="main">
@@ -777,17 +809,17 @@ function Chart({
           data={series}
           margin={{ top: 12, right: 8, left: -26, bottom: 0 }}
         >
-          <CartesianGrid vertical={false} stroke="#e9e6e2" />
+          <CartesianGrid vertical={false} stroke="var(--line)" />
           <XAxis
             dataKey="name"
-            tick={{ fontSize: 11, fill: "#5f6874" }}
+            tick={{ fontSize: 11, fill: "var(--slate)" }}
             axisLine={false}
             tickLine={false}
             interval="preserveStartEnd"
             minTickGap={18}
           />
-          <YAxis allowDecimals={false} axisLine={false} tickLine={false} />
-          <Tooltip cursor={{ fill: "#F7F1EB" }} />
+          <YAxis tick={{ fill: "var(--slate)", fontSize: 11 }} allowDecimals={false} axisLine={false} tickLine={false} />
+          <Tooltip cursor={{ fill: "var(--raised)" }} contentStyle={{ background: "var(--surface)", borderColor: "var(--line)", color: "var(--ink)", borderRadius: 12 }} />
           <Bar
             isAnimationActive={false}
             dataKey="total"
@@ -803,6 +835,11 @@ function Chart({
 }
 function Recenter({ reports }: { reports: Report[] }) {
   const m = useMap();
+  useEffect(() => {
+    const observer = new ResizeObserver(() => m.invalidateSize({ pan: false }));
+    observer.observe(m.getContainer());
+    return () => observer.disconnect();
+  }, [m]);
   return (
     <button
       className="map-recenter"

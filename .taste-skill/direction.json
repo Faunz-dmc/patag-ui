@@ -1,12 +1,12 @@
 {
  "version": 1,
  "kind": "app",
- "at": "2026-10-22T08:21:07.903Z",
- "seed": 337120209,
+ "at": "2026-10-23T13:08:22.301Z",
+ "seed": 465436919,
  "input": {
   "kind": "workspace",
-  "brief": "PATAG civic road reporting and maintenance operations",
-  "theme": "light",
+  "brief": "PATAG road reporting operations, orange gradient actions, charcoal feature cards, Montserrat, warm paper",
+  "theme": null,
   "screens": [
    "overview",
    "list",
