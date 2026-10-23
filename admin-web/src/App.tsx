@@ -66,7 +66,7 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
-import type { Bootstrap, Report, Photo, User } from "./types";
+import type { Bootstrap, Report, Photo, User, Team } from "./types";
 import { statuses } from "./types";
 import { request, asset, upload } from "./api";
 import { role } from "./config";
@@ -153,12 +153,13 @@ function Header({
   description?: string;
   action?: ReactNode;
 }) {
+  const workspace = useContext(Context)?.data;
   return (
     <header className="page-heading">
       <div>
         <p className="scope">
-          {admin ? "LGU operations" : "Road Crew Alpha"}{" "}
-          <ChevronRight size={13} /> Malolos, Bulacan
+          {admin ? "LGU operations" : workspace?.teams.find(t=>t.id===workspace.user.teamId)?.name || "Maintenance"}{" "}
+          <ChevronRight size={13} /> {workspace?.settings?.city || "Malolos"}, {workspace?.settings?.province || "Bulacan"}
         </p>
         <h1>{title}</h1>
         {description && <p>{description}</p>}
@@ -502,7 +503,7 @@ function Shell() {
           <div className="workspace">
             <span className="workspace-avatar">{admin ? "LG" : "RC"}</span>
             <div>
-              <strong>{admin ? "Malolos demo LGU" : "Road Crew Alpha"}</strong>
+              <strong>{admin ? data.settings?.agency || "Malolos demo LGU" : data.teams.find(t=>t.id===data.user.teamId)?.name || "Maintenance"}</strong>
               <small>
                 {admin ? "City engineering office" : "Maintenance workspace"}
               </small>
@@ -578,7 +579,7 @@ function Shell() {
             <nav className="topnav" aria-label="Primary workspace">
               {(admin ? [['dashboard','Overview'],['reports','Reports'],['assignments','Operations'],['users','User management']] : [['dashboard','Overview'],['assignments','My tasks'],['map','Task map'],['history','History']]).map(([path,label])=><NavLink key={path} to={base+'/'+path}>{label}</NavLink>)}
             </nav>
-            <span className="workspace-caption">{admin ? 'Malolos · LGU' : 'Road Crew Alpha'}</span>
+            <span className="workspace-caption">{admin ? (data.settings?.city || 'Malolos') + ' · LGU' : data.teams.find(t=>t.id===data.user.teamId)?.name || 'Maintenance'}</span>
             <button className="icon-button theme-toggle" onClick={toggleTheme} aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"} title={theme === "dark" ? "Light mode" : "Dark mode"}>
               {theme === "dark" ? <Sun size={19} /> : <Moon size={19} />}
             </button>
@@ -1427,6 +1428,11 @@ function Details({ mode = "detail" }: { mode?: string }) {
             aside={<Badge value={r.severity} />}
           >
             <Gallery photos={r.photos} label="Before repair" />
+            {admin && <div className="notice" style={{display:"block"}}>
+              <strong>Public photo visibility</strong>
+              <p>Review all before-and-after images for faces, plates and personal details before allowing them on the community map. New evidence requires a new review.</p>
+              <button className="button" disabled={busy} onClick={() => void direct("publication",{approved:!r.publicPhotosApproved,note:r.publicPhotosApproved?"Public photos hidden.":"Photos reviewed and approved for public display."})}>{r.publicPhotosApproved ? "Hide public photos" : "Approve public photos"}</button>
+            </div>}
             {!admin && ["Assigned", "In Progress"].includes(r.status) && r.completion?.state !== "Awaiting Verification" && (
               <label className="upload">
                 <Camera size={20} />
@@ -2058,14 +2064,17 @@ function Duplicates() {
   );
 }
 function Teams() {
-  const { data } = useData();
+  const { data, refresh, notify } = useData();
   const { id } = useParams();
   const [q, setQ] = useState("");
+  const [editing, setEditing] = useState<Team | null>(null);
+  const [error, setError] = useState("");
   return (
     <>
       <Header
         title={id ? "Maintenance team" : "Maintenance teams"}
-        description="Crew workload derives from current report assignments."
+        description="Create crews, manage availability and review assigned work."
+        action={<button className="primary" onClick={() => {setError("");setEditing({id:"",name:"",members:[],active:true});}}>Add team <Users size={16}/></button>}
       />
       <label className="search">
         <Search size={16} />
@@ -2089,7 +2098,8 @@ function Teams() {
               title={t.name}
               aside={<Badge value={t.active ? "Active" : "Inactive"} />}
             >
-              <p>{t.members.join(" · ")}</p>
+              <p>{t.members.join(" · ") || "No active members yet. Assign accounts from User management."}</p>
+              <button className="button" onClick={() => {setError("");setEditing(t);}}>Edit team</button>
               <dl className="detail-list">
                 <div>
                   <dt>Open tasks</dt>
@@ -2128,6 +2138,15 @@ function Teams() {
             </Panel>
           ))}
       </div>
+      {editing && <Modal title={editing.id ? "Edit maintenance team" : "Add maintenance team"} close={() => setEditing(null)}>
+        <form onSubmit={async(e) => {e.preventDefault();const f=new FormData(e.currentTarget);try{await request("/teams",{id:editing.id,name:f.get("name"),active:f.get("active")==="true"},editing.id?"PATCH":"POST");await refresh();setEditing(null);notify("Team saved.");}catch(e){setError((e as Error).message);}}}>
+          <label>Team name<input name="name" defaultValue={editing.name} required maxLength={100}/></label>
+          <label>Availability<select name="active" defaultValue={String(editing.active)}><option value="true">Active</option><option value="false">Inactive</option></select></label>
+          <p>Members are linked through User accounts. Finish open tasks and move active members before deactivating a team.</p>
+          {error && <p className="error" role="alert">{error}</p>}
+          <button className="primary">Save team <Check size={16}/></button>
+        </form>
+      </Modal>}
     </>
   );
 }
@@ -2142,7 +2161,8 @@ function UsersPage() {
     <>
       <Header
         title={id ? "User details" : "User accounts"}
-        description="Local demonstration accounts. Production access requires server-managed invitations and authorization."
+        description="Manage accounts, roles and maintenance team membership."
+        action={<button className="primary" onClick={() => {setError("");setSelected({id:"",name:"",email:"",role:"citizen",active:true});}}>Add account <Users size={16}/></button>}
       />
       <div className="filters">
         <label className="search">
@@ -2213,7 +2233,7 @@ function UsersPage() {
       </Panel>
       {selected && (
         <Modal
-          title={"Manage " + selected.name}
+          title={selected.id ? "Manage " + selected.name : "Add account"}
           close={() => setSelected(null)}
         >
           <form
@@ -2225,10 +2245,11 @@ function UsersPage() {
                   "/users",
                   {
                     id: selected.id,
+                    name: f.get("name"), email:f.get("email"),password:f.get("password"),teamId:f.get("teamId"),
                     role: f.get("role"),
                     active: f.get("active") === "true",
                   },
-                  "PATCH",
+                  selected.id ? "PATCH" : "POST",
                 );
                 await refresh();
                 setSelected(null);
@@ -2238,9 +2259,16 @@ function UsersPage() {
               }
             }}
           >
+            {!selected.id && <>
+              <label>Full name<input name="name" required autoComplete="name"/></label>
+              <label>Email address<input name="email" type="email" required autoComplete="off"/></label>
+              <label>Temporary demo password<input name="password" type="password" minLength={8} required autoComplete="new-password"/></label>
+              <p>Use fictional details and a demo-only password.</p>
+            </>}
+            <label>Maintenance team<select name="teamId" aria-label="Maintenance team" defaultValue={selected.teamId || ""}><option value="">Not assigned (non-maintenance roles)</option>{data.teams.filter(t=>t.active).map(t=><option key={t.id} value={t.id}>{t.name}</option>)}</select></label>
             <label>
               Role
-              <select name="role" defaultValue={selected.role}>
+              <select name="role" aria-label="Role" defaultValue={selected.role}>
                 <option>citizen</option>
                 <option>maintenance</option>
                 <option>admin</option>
@@ -2674,6 +2702,12 @@ function Activity() {
     </>
   );
 }
+function DemoAccountSwitcher() {
+  const {data}=useData();const [accounts,setAccounts]=useState<User[]>([]);const [error,setError]=useState("");
+  useEffect(()=>{if(data.demo)void request<User[]>("/auth/demo/accounts").then(setAccounts).catch(()=>{});},[data.demo]);
+  if(!data.demo)return null;
+  return <section className="settings-row"><div><h2>Preview account</h2><p>Try the workflow as a different fictional account in this role.</p></div><form className="panel" onSubmit={async(e)=>{e.preventDefault();const f=new FormData(e.currentTarget);try{const result=await request<{token:string}>("/auth/demo",{role:data.user.role,userId:f.get("userId")});sessionStorage.setItem("patag-token",result.token);location.reload();}catch(e){setError((e as Error).message);}}}><label>Account<select name="userId" aria-label="Account" defaultValue={data.user.id}>{accounts.filter(u=>u.role===data.user.role).map(u=><option key={u.id} value={u.id}>{u.name} · {u.email}</option>)}</select></label>{error&&<p role="alert" className="error">{error}</p>}<button className="button">Switch preview account</button></form></section>;
+}
 function SettingsPage() {
   const { data, refresh, notify } = useData();
   const [error, setError] = useState(""),
@@ -2686,6 +2720,7 @@ function SettingsPage() {
         title={admin ? "Workspace settings" : "Profile & settings"}
         description="Profile and preferences for this demonstration workspace."
       />
+      <DemoAccountSwitcher/>
       <section className="settings-row">
         <div>
           <h2>Your profile</h2>
@@ -2724,7 +2759,7 @@ function SettingsPage() {
           </label>
           <p>
             Role: {data.user.role}
-            {!admin ? " · Road Crew Alpha" : ""}
+            {!admin ? " · " + (data.teams.find(t=>t.id===data.user.teamId)?.name || "No team") : ""}
           </p>
           {error && (
             <p className="error" role="alert">
@@ -2769,17 +2804,14 @@ function SettingsPage() {
           <div>
             <h2>Agency & jurisdiction</h2>
             <p>
-              Local workspace label only. Reports may be forwarded individually
-              to the responsible agency.
+              Shared by all roles in this workspace. New reports use this agency; existing reports keep their assigned jurisdiction.
             </p>
           </div>
           <form
             className="panel"
-            onSubmit={(e) => {
-              e.preventDefault();
-              const f = new FormData(e.currentTarget);
-              localStorage.setItem("patag-agency", String(f.get("agency")));
-              notify("Local agency preference saved.");
+            onSubmit={async(e) => {
+              e.preventDefault();const f=new FormData(e.currentTarget);
+              try {await request("/settings",{agency:f.get("agency"),city:f.get("city"),province:f.get("province")},"PATCH");await refresh();notify("Workspace settings saved.");setError("");}catch(e){setError((e as Error).message);}
             }}
           >
             <label>
@@ -2787,13 +2819,15 @@ function SettingsPage() {
               <input
                 name="agency"
                 defaultValue={
-                  localStorage.getItem("patag-agency") ||
-                  "Malolos demo jurisdiction"
+                  data.settings?.agency || "Malolos demo jurisdiction"
                 }
                 required
               />
             </label>
-            <button>Save local preference</button>
+            <label>City<input name="city" defaultValue={data.settings?.city || "Malolos"} required/></label>
+            <label>Province<input name="province" defaultValue={data.settings?.province || "Bulacan"} required/></label>
+            {error && <p className="error" role="alert">{error}</p>}
+            <button className="primary">Save workspace settings</button>
             <Link className="back-link" to={base + "/users"}>
               Manage user accounts
               <ArrowRight size={16} />

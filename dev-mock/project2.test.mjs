@@ -45,7 +45,33 @@ test('PDF FR-01 and role ownership: real registration/login, rejection and notif
   assert.equal((await call('/reports/PTG-2026-0101',undefined,token)).status,403);
   assert.equal((await call('/reports/PTG-2026-0101/feedback',{rating:5,text:'not mine'},token)).status,403);
   const bootstrap=await call('/bootstrap',undefined,token);assert.equal(bootstrap.data.reports.length,0);assert.equal(bootstrap.data.notifications.length,0);assert.equal(bootstrap.data.users.length,0);
-  assert.equal((await call('/users',{id:'admin-1',active:false},token,'PATCH')).status,404);
+  assert.equal((await call('/users',{id:'admin-1',active:false},token,'PATCH')).status,403);
   await call('/auth/logout',{},token);assert.equal((await call('/bootstrap',undefined,token)).status,401);
+ }finally{await new Promise(r=>server.close(r));}
+});
+
+test('workspace settings, crew provisioning and public photo approval connect across roles',async()=>{
+ const server=await createServer({persist:false});await new Promise(r=>server.listen(0,'127.0.0.1',r));const base=`http://127.0.0.1:${server.address().port}/api`;
+ async function call(path,body,token,method){const r=await fetch(base+path,{method:method||(body?'POST':'GET'),headers:{'Content-Type':'application/json',...(token?{Authorization:`Bearer ${token}`}:{})},body:body?JSON.stringify(body):undefined});return {status:r.status,data:await r.json()};}
+ try{
+  const admin=(await call('/auth/demo',{role:'admin'})).data.token,citizen=(await call('/auth/demo',{role:'citizen'})).data.token;
+  assert.equal((await call('/settings',{agency:'Office',city:'Malolos',province:'Bulacan'},citizen,'PATCH')).status,403);
+  assert.equal((await call('/settings',{agency:'Office',city:'Malolos',province:'Bulacan'},admin,'PATCH')).status,200);
+  assert.equal((await call('/bootstrap',undefined,citizen)).data.settings.agency,'Office');
+  const team=(await call('/teams',{name:'Audit team',active:true},admin)).data;
+  assert.equal((await call('/users',{name:'Crew Test',email:'crew-test@example.test',password:'Preview-Test-123',role:'maintenance'},admin)).status,400);
+  const account=await call('/users',{name:'Crew Test',email:'crew-test@example.test',password:'Preview-Test-123',role:'maintenance',teamId:team.id},admin);assert.equal(account.status,201);assert.equal(account.data.hash,undefined);
+  const crew=(await call('/auth/login',{email:'crew-test@example.test',password:'Preview-Test-123'})).data.token;assert.ok(crew);
+  const id='PTG-2026-0103';assert.equal((await call(`/reports/${id}/events`,{action:'assign',teamId:team.id},admin)).status,200);
+  assert.ok((await call('/bootstrap',undefined,crew)).data.reports.some(r=>r.id===id));
+  assert.equal((await call('/teams',{id:team.id,name:team.name,active:false},admin,'PATCH')).status,409);
+  const upload=(await call('/uploads',{data:'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=',name:'private.png'},crew)).data;
+  await call(`/reports/${id}/events`,{action:'before-photos',photos:[upload]},crew);
+  const publicPhotos=async()=>((await call('/public/reports')).data.find(r=>r.id===id).photos);
+  assert.ok(!(await publicPhotos()).some(p=>p.url===upload.url));
+  assert.equal((await call(`/reports/${id}/events`,{action:'publication',approved:true},crew)).status,409);
+  assert.equal((await call(`/reports/${id}/events`,{action:'publication',approved:true},admin)).status,200);
+  assert.ok((await publicPhotos()).some(p=>p.url===upload.url));
+  await call(`/reports/${id}/events`,{action:'publication',approved:false},admin);assert.ok(!(await publicPhotos()).some(p=>p.url===upload.url));
  }finally{await new Promise(r=>server.close(r));}
 });

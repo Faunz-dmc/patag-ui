@@ -19,6 +19,8 @@ docs/               Compliance matrix, 55 routes, contract, design and QA
 
 Use fictional accounts/data only. There are no real LGU partnerships, repair records or official statistics. The mock service must not be exposed publicly. It supports cross-process state through HTTP and local JSON, not shared localStorage.
 
+See the [connected preview controls and walkthrough](docs/preview-completion/README.md) for citizen accounts, team/staff management, shared settings and photo approval.
+
 ## Open the interactive preview
 
 Open [preview/Open-PATAG.html](preview/Open-PATAG.html) directly in Chrome or Edge. Choose Citizen, LGU / Admin or Maintenance. No local server is needed. This is a functioning demo with fictional browser-local data, not a screenshot gallery. The citizen preview is a separate approved browser demo; the native application remains Flutter. Map tiles require internet.

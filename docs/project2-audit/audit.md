@@ -2,6 +2,10 @@
 
 Reviewed 24 October 2026 against the supplied **IT 305 - PROJECT 2 (1).pdf**, all three pages, including its image-based technical and UI tables. The source was read from `C:/Users/user/Downloads/IT 305 - PROJECT 2 (1).pdf`. The rendered pages and extracted text in this folder are review evidence.
 
+## Follow-up: web-preview scope
+
+The user subsequently requested completion for the web preview only, without hosting or an Android device. [The preview follow-up](../preview-completion/README.md) adds citizen account creation/login, team and staff provisioning, shared agency settings, account switching, and public-photo approval. These controls are no longer missing. Deployment and actual device acceptance remain separate; the audit below records the original findings.
+
 ## Verdict
 
 **The project is a connected, working local demonstration with all 18 functional areas represented. It is not yet fully accepted or deployment-ready.** The citizen, LGU and maintenance interfaces follow the PDF's workflow and eight recommended statuses. No numeric completion percentage or grade is justified: the supplied PDF contains **no scored rubric, criterion weights or grade thresholds**.

@@ -72,3 +72,12 @@ Maintenance can also send `before-photos` with uploaded `photos` while Assigned 
 ```
 
 CSV/PDF exports are generated in the admin frontend from its authorized report snapshot, not by an export server endpoint. Production should provide a server-authorized export endpoint with filters, audit and file retention. In-app notifications are polling-based mock events; there is no push/email transport. JSON fixtures demonstrate one jurisdiction and two teams; there is no production LGU directory.
+
+## Connected workspace operations (24 October)
+
+- Bootstrap now includes shared `settings: {agency, city, province}`, dynamic `teams`, and `demo: true` in the local demonstration service.
+- Admin `PATCH /settings` validates and saves shared agency/city/province. New reports inherit the configured agency.
+- Admin `POST /teams` creates a team; `PATCH /teams` edits its name/active state. Teams with active members or open work cannot be deactivated.
+- Admin `POST /users` takes name/email/password/role/teamId and creates an account. Maintenance roles require an active team. `PATCH /users` also updates team membership. Password material is never returned by these endpoints.
+- Demo-only `GET /auth/demo/accounts` lists active fictional accounts; `POST /auth/demo` optionally selects `userId` within a role. Do not expose demo authentication publicly.
+- Admin report event `{action:"publication", approved:true|false}` controls public photo visibility. New before/after evidence clears approval. Original photos remain available to authorized roles. This is a publication workflow, not automatic face/plate redaction or secure object-storage authorization.
