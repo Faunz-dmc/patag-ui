@@ -1,4 +1,4 @@
-> Authentication follow-up: [Current login and registration flow](../auth-flow/README.md) supersedes the account-switching steps below. Registration is now a two-step signed-out flow; created staff use their password.
+> Authentication follow-up: [Current login and registration flow](../auth-flow/README.md) supersedes the account-switching steps below. Registration is now a three-step signed-out flow; created staff use their password.
 
 # Connected web-preview completion
 

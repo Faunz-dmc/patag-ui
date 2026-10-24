@@ -35,7 +35,7 @@ test('PDF FR-01 and role ownership: real registration/login, rejection and notif
  const base=`http://127.0.0.1:${server.address().port}/api`;
  async function call(path,body,token,method){const r=await fetch(base+path,{method:method||(body?'POST':'GET'),headers:{'Content-Type':'application/json',...(token?{Authorization:`Bearer ${token}`}:{})},body:body?JSON.stringify(body):undefined});return {status:r.status,data:await r.json()};}
  try{
-  const input={name:'Audit Citizen',email:'audit@example.test',password:'Audit-Test-12345'};
+  const input={name:'Audit Citizen',email:'audit@example.test',password:'Audit-Test-12345',address:{line:'',barangay:'Guinhawa',city:'Malolos',province:'Bulacan'}};
   assert.equal((await call('/auth/register',{...input,password:'short'})).status,400);
   const registered=await call('/auth/register',input);assert.equal(registered.status,201);const token=registered.data.token;
   assert.equal(registered.data.user.hash,undefined);assert.equal(registered.data.user.salt,undefined);
@@ -45,6 +45,7 @@ test('PDF FR-01 and role ownership: real registration/login, rejection and notif
   assert.equal((await call('/reports/PTG-2026-0101',undefined,token)).status,403);
   assert.equal((await call('/reports/PTG-2026-0101/feedback',{rating:5,text:'not mine'},token)).status,403);
   const bootstrap=await call('/bootstrap',undefined,token);assert.equal(bootstrap.data.reports.length,0);assert.equal(bootstrap.data.notifications.length,0);assert.equal(bootstrap.data.users.length,0);
+  const updated=await call('/me',{name:input.name,email:input.email,address:{line:'12 Mabini',barangay:'Guinhawa',city:'Malolos',province:'Bulacan'}},token,'PATCH');assert.equal(updated.status,200);assert.equal(updated.data.address.line,'12 Mabini');assert.equal((await call('/me',{name:input.name,email:input.email,address:{barangay:'',city:'Malolos',province:'Bulacan'}},token,'PATCH')).status,400);assert.ok(!(JSON.stringify((await call('/public/reports')).data)).includes('12 Mabini'));
   assert.equal((await call('/users',{id:'admin-1',active:false},token,'PATCH')).status,403);
   await call('/auth/logout',{},token);assert.equal((await call('/bootstrap',undefined,token)).status,401);
  }finally{await new Promise(r=>server.close(r));}
@@ -82,8 +83,9 @@ test('registration normalization, portal restriction, session revocation and thr
  const call=async(p,body,token)=>{const r=await fetch(base+p,{method:body?'POST':'GET',headers:{'Content-Type':'application/json',...(token?{Authorization:'Bearer '+token}:{})},body:body?JSON.stringify(body):undefined});return {status:r.status,data:await r.json()};};
  try{
   assert.equal((await call('/auth/demo',{role:'admin'})).status,404);
-  const input={name:'  Test Reporter  ',email:'  NORMALIZED@example.test ',password:'Several roads lead home!',role:'admin',active:false,teamId:'team-1'};
-  const created=await call('/auth/register',input);assert.equal(created.status,201);assert.equal(created.data.user.role,'citizen');assert.equal(created.data.user.email,'normalized@example.test');assert.equal(created.data.user.active,true);assert.equal(created.data.user.teamId,undefined);assert.equal(created.data.user.emailVerified,false);
+  const input={name:'  Test Reporter  ',email:'  NORMALIZED@example.test ',password:'Several roads lead home!',address:{line:' 12 Mabini St ',barangay:' Guinhawa ',city:' Malolos ',province:' Bulacan '},role:'admin',active:false,teamId:'team-1'};
+  assert.equal((await call('/auth/register',{...input,address:{}})).status,400);
+  const created=await call('/auth/register',input);assert.equal(created.status,201);assert.deepEqual(created.data.user.address,{line:'12 Mabini St',barangay:'Guinhawa',city:'Malolos',province:'Bulacan'});assert.equal(created.data.user.role,'citizen');assert.equal(created.data.user.email,'normalized@example.test');assert.equal(created.data.user.active,true);assert.equal(created.data.user.teamId,undefined);assert.equal(created.data.user.emailVerified,false);
   assert.equal((await call('/auth/register',{...input,email:'normalized@example.test'})).status,409);
   assert.equal((await call('/auth/login',{email:'NORMALIZED@EXAMPLE.TEST',password:input.password,role:'admin'})).status,401);
   const login=await call('/auth/login',{email:'NORMALIZED@EXAMPLE.TEST',password:input.password,role:'citizen'});assert.equal(login.status,200);

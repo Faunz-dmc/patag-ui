@@ -3,7 +3,7 @@ import {readFile,writeFile,mkdir} from 'node:fs/promises';
 import {fileURLToPath} from 'node:url';
 import path from 'node:path';
 import {randomUUID,scryptSync,timingSafeEqual} from 'node:crypto';
-import {seed,teams,statuses,candidates,transition,publicReport,workspace,manageWorkspace,registrationFields} from './domain.mjs';
+import {seed,teams,statuses,candidates,transition,publicReport,workspace,manageWorkspace,registrationFields,addressFields} from './domain.mjs';
 export async function createServer({persist=true,allowDemo=true}={}){
  const dir=path.dirname(fileURLToPath(import.meta.url)),dataDir=path.join(dir,'data');let db=seed();const sessions=new Map();const attempts=new Map();
  const issue=u=>{const token=randomUUID();sessions.set(token,{userId:u.id,expires:Date.now()+8*60*60*1000});return {token,user:publicUser(u)};};
@@ -27,9 +27,9 @@ export async function createServer({persist=true,allowDemo=true}={}){
     const key=req.socket.remoteAddress+':'+p, now=Date.now();let attempt=attempts.get(key);if(!attempt||attempt.until<now){attempt={count:0,until:now+60000};attempts.set(key,attempt);}if(++attempt.count>20){send(429,{error:'Too many attempts. Wait a minute and try again.'});return;}
    }
    if(p==='/auth/register'&&req.method==='POST'){
-    const fields=registrationFields(body);
+    const fields=registrationFields(body,{addressRequired:true});
     if(db.users.some(u=>u.email.toLowerCase()===fields.email)){send(409,{error:'Unable to create an account with these details. Try signing in or recovering access.'});return;}
-    const salt=randomUUID(),u={id:randomUUID(),role:'citizen',name:fields.name,email:fields.email,active:true,emailVerified:false,salt,hash:scryptSync(fields.password,salt,64).toString('hex')};db.users.push(u);await save();send(201,issue(u));return;
+    const salt=randomUUID(),u={id:randomUUID(),role:'citizen',name:fields.name,email:fields.email,address:fields.address,active:true,emailVerified:false,salt,hash:scryptSync(fields.password,salt,64).toString('hex')};db.users.push(u);await save();send(201,issue(u));return;
    }
    if(p==='/auth/login'&&req.method==='POST'){
     const email=typeof body.email==='string'?body.email.trim().toLowerCase():'';const u=db.users.find(u=>u.email.toLowerCase()===email&&u.active);
@@ -42,7 +42,7 @@ export async function createServer({persist=true,allowDemo=true}={}){
    if(p==='/public/reports'&&req.method==='GET'){send(200,db.reports.filter(r=>!['Rejected','Duplicate'].includes(r.status)).map(publicReport));return;}
    if(!user){send(401,{error:'Session expired. Sign in again.'});return;}
    if(p==='/auth/logout'){sessions.delete((req.headers.authorization||'').replace('Bearer ',''));send(200,{ok:true});return;}
-   if(p==='/me'&&req.method==='PATCH'){if(!body.name?.trim()||!/^\S+@\S+\.\S+$/.test(body.email)){send(400,{error:'Name and valid email are required.'});return;}if(body.email.trim().toLowerCase()!==user.email.toLowerCase()){send(400,{error:'Email changes require verified account recovery.'});return;}user.name=body.name.trim();await save();send(200,publicUser(user));return;}
+   if(p==='/me'&&req.method==='PATCH'){if(!body.name?.trim()||!/^\S+@\S+\.\S+$/.test(body.email)){send(400,{error:'Name and valid email are required.'});return;}if(body.email.trim().toLowerCase()!==user.email.toLowerCase()){send(400,{error:'Email changes require verified account recovery.'});return;}const address=body.address?addressFields(body.address):null;user.name=body.name.trim();if(address&&user.role==='citizen')user.address=address;await save();send(200,publicUser(user));return;}
    if(p==='/bootstrap'){send(200,{reports:db.reports.filter(r=>user.role==='admin'||(user.role==='citizen'?r.reporterId===user.id:r.teamId===user.teamId)),teams:db.teams,settings:db.settings,demo:true,users:user.role==='admin'?db.users.map(publicUser):[],notifications:db.notifications.filter(n=>n.role===user.role&&(n.role!=='citizen'||n.userId===user.id)&&(n.role!=='maintenance'||n.teamId===user.teamId)),user:publicUser(user),statuses});return;}
    if(['/settings','/teams','/users'].includes(p)&&['POST','PATCH'].includes(req.method)){
     if(p==='/users'&&req.method==='POST'&&user.role==='admin')registrationFields(body);

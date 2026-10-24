@@ -30,7 +30,7 @@ Base: web `VITE_API_URL=http://127.0.0.1:4100/api`; Android emulator `--dart-def
 |---|---|---|
 | GET /health | public | local demo health |
 | POST /auth/demo | public, local-only | `{ "role": "admin" }` -> token + user; supports citizen and maintenance |
-| POST /auth/register | public | name, email, password -> citizen token + user |
+| POST /auth/register | public | name, email, address {line?, barangay, city, province}, password -> citizen token + user |
 | POST /auth/login | public | email, password -> token + user |
 | POST /auth/recovery | public | email -> demo confirmation, no email sent |
 | POST /auth/logout | authenticated | invalidates current token |
@@ -84,6 +84,6 @@ CSV/PDF exports are generated in the admin frontend from its authorized report s
 
 ## Authentication follow-up
 
-Citizen signup now requires name (1–100 characters), normalized email (maximum 254), and a password of 15–128 characters; the same creation policy applies to staff provisioning. Optional `role` on `/auth/login` must match the account. `/auth/register` ignores role/team/active injection and always creates an active citizen with `emailVerified:false`.
+Citizen signup now requires name (1–100 characters), normalized email (maximum 254), private address (barangay, city or municipality, province; optional street/house number), and a password of 15–128 characters; the same creation policy applies to staff provisioning. Optional `role` on `/auth/login` must match the account. `/auth/register` ignores role/team/active injection and always creates an active citizen with `emailVerified:false`.
 
-Sessions expire after eight hours and are revoked on logout. Registration/login are limited to 20 requests per minute per client/endpoint in the Node service. Demo endpoints only select seeded accounts without password hashes; `createServer({allowDemo:false})` disables them. `/me` cannot change email without a verified recovery workflow. See `docs/auth-flow/README.md` for preview boundaries and test evidence.
+Sessions expire after eight hours and are revoked on logout. Registration/login are limited to 20 requests per minute per client/endpoint in the Node service. Demo endpoints only select seeded accounts without password hashes; `createServer({allowDemo:false})` disables them. `/me` allows the citizen to correct the private address with the same validation. It cannot change email without a verified recovery workflow. See `docs/auth-flow/README.md` for preview boundaries and test evidence.

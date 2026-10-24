@@ -83,7 +83,13 @@ export function manageWorkspace(db,user,p,body,method){
  fail('Unknown workspace operation.',404);
 }
 
-export function registrationFields(body) {
+export function addressFields(raw={},required=true) {
+ const address={line:typeof raw.line==='string'?raw.line.trim():'',barangay:typeof raw.barangay==='string'?raw.barangay.trim():'',city:typeof raw.city==='string'?raw.city.trim():'',province:typeof raw.province==='string'?raw.province.trim():''};
+ if(required&&(!address.barangay||!address.city||!address.province))throw Object.assign(Error('Enter your barangay, city or municipality, and province.'),{status:400});
+ if(Object.values(address).some(value=>value.length>120))throw Object.assign(Error('Keep each address field within 120 characters.'),{status:400});
+ return address;
+}
+export function registrationFields(body,{addressRequired=false}={}) {
  const name=typeof body.name==='string'?body.name.trim():'';
  const email=typeof body.email==='string'?body.email.trim().toLowerCase():'';
  const password=body.password;
@@ -91,5 +97,6 @@ export function registrationFields(body) {
  if(email.length>254||!/^\S+@\S+\.\S+$/.test(email))throw Object.assign(Error('Enter a valid email address.'),{status:400});
  if(typeof password!=='string'||[...password].length<15||[...password].length>128)throw Object.assign(Error('Use a password of 15 to 128 characters. A few unrelated words work well.'),{status:400});
  if(/^(.)\1+$/.test(password)||['passwordpassword','123456789012345','qwertyuiopasdfgh'].includes(password.toLowerCase()))throw Object.assign(Error('Choose a less predictable password.'),{status:400});
- return {name,email,password};
+ const address=addressFields(body.address||{},addressRequired);
+ return {name,email,password,address};
 }

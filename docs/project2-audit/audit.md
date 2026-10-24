@@ -4,7 +4,7 @@ Reviewed 24 October 2026 against the supplied **IT 305 - PROJECT 2 (1).pdf**, al
 
 ## Authentication follow-up
 
-See [the current account flow](../auth-flow/README.md): two-step citizen signup, staff login, visible logout, expiring sessions and stricter validation. This remains a local demonstration; email verification and deployed authentication are not claimed.
+See [the current account flow](../auth-flow/README.md): three-step citizen signup, staff login, visible logout, expiring sessions and stricter validation. This remains a local demonstration; email verification and deployed authentication are not claimed.
 
 ## Follow-up: web-preview scope
 

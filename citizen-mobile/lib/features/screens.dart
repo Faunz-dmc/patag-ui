@@ -259,7 +259,11 @@ class _AuthState extends State<AuthScreen> {
   final key = GlobalKey<FormState>();
   final name = TextEditingController(),
       email = TextEditingController(),
-      password = TextEditingController();
+      password = TextEditingController(),
+      addressLine = TextEditingController(),
+      barangay = TextEditingController(),
+      city = TextEditingController(),
+      province = TextEditingController();
   bool hidden = true, busy = false, privacy = false;
   int signupStep = 0;
   String error = '', success = '';
@@ -267,7 +271,7 @@ class _AuthState extends State<AuthScreen> {
   bool get recovery => widget.kind == 'forgot-password';
   @override
   void dispose() {
-    for (final c in [name, email, password]) {
+    for (final c in [name, email, password, addressLine, barangay, city, province]) {
       c.dispose();
     }
     super.dispose();
@@ -275,7 +279,7 @@ class _AuthState extends State<AuthScreen> {
 
   Future<void> submit({bool demo = false}) async {
     if (!demo && !key.currentState!.validate()) return;
-    if(register && signupStep == 0){setState(() {signupStep=1;error='';});return;}
+    if(register && signupStep < 2){setState(() {signupStep++;error='';});return;}
     if (register && !privacy) {
       setState(() => error = 'Please acknowledge the privacy information.');
       return;
@@ -305,6 +309,12 @@ class _AuthState extends State<AuthScreen> {
                   'email': email.text.trim(),
                   'password': password.text,
                   'role': 'citizen',
+                  if(register) 'address': {
+                    'line': addressLine.text.trim(),
+                    'barangay': barangay.text.trim(),
+                    'city': city.text.trim(),
+                    'province': province.text.trim(),
+                  },
                 },
         );
         if (mounted) home(context);
@@ -345,7 +355,7 @@ class _AuthState extends State<AuthScreen> {
                     fontSize: 12),
               ),
               gap(24),
-              if(register) ...[Text('Step ${signupStep+1} of 2 · ${signupStep==0 ? 'About you' : 'Secure your account'}'), gap(), LinearProgressIndicator(value:(signupStep+1)/2), gap(20)],
+              if(register) ...[Text('Step ${signupStep+1} of 3 · ${['About you', 'Your address', 'Secure your account'][signupStep]}'), gap(), LinearProgressIndicator(value:(signupStep+1)/3), gap(20)],
               if (register && signupStep==0) field('Full name', name),
               if(!register || signupStep==0)
               TextFormField(
@@ -359,7 +369,19 @@ class _AuthState extends State<AuthScreen> {
                         : 'Enter a valid email address.',
               ),
               gap(),
-              if (!recovery && (!register || signupStep==1)) ...[
+              if(register && signupStep==1) ...[
+                const Text('Your address stays on your private account. You will pin the pothole separately when reporting.'),
+                gap(16),
+                TextFormField(controller: addressLine, autofillHints: const [AutofillHints.streetAddressLine1], decoration: const InputDecoration(labelText: 'Street / house number (optional)')),
+                gap(),
+                TextFormField(controller: barangay, decoration: const InputDecoration(labelText: 'Barangay'), validator:(s)=>s!=null&&s.trim().isNotEmpty&&s.trim().length<=120?null:'Enter your barangay.'),
+                gap(),
+                TextFormField(controller: city, autofillHints: const [AutofillHints.addressCity], decoration: const InputDecoration(labelText: 'City / municipality'), validator:(s)=>s!=null&&s.trim().isNotEmpty&&s.trim().length<=120?null:'Enter your city or municipality.'),
+                gap(),
+                TextFormField(controller: province, autofillHints: const [AutofillHints.addressState], decoration: const InputDecoration(labelText: 'Province'), validator:(s)=>s!=null&&s.trim().isNotEmpty&&s.trim().length<=120?null:'Enter your province.'),
+                gap(),
+              ],
+              if (!recovery && (!register || signupStep==2)) ...[
                 TextFormField(
                   controller: password,
                   obscureText: hidden,
@@ -406,15 +428,20 @@ class _AuthState extends State<AuthScreen> {
                     : recovery
                         ? 'Request recovery'
                         : register
-                            ? (signupStep==0 ? 'Continue' : 'Create account')
+                            ? (signupStep<2 ? 'Continue' : 'Create account')
                             : 'Sign in',
                 busy ? null : () => submit(),
               ),
-              if(register && signupStep==1) TextButton(onPressed:busy ? null : () => setState(() {signupStep=0;error='';}),child:const Text('Back to your details')),
+              if(register && signupStep>0) TextButton(onPressed:busy ? null : () => setState(() {signupStep--;error='';}),child:const Text('Back')),
+              if(register && signupStep==0) TextButton(onPressed:() => go(context, '/login'),child:const Text('Already have an account? Sign in')),
               if (!register && !recovery) ...[
-                TextButton(
-                  onPressed: () => go(context, '/forgot-password'),
-                  child: const Text('Forgot password?'),
+                Wrap(
+                  alignment: WrapAlignment.spaceBetween,
+                  spacing: 12,
+                  children: [
+                    TextButton(onPressed: () => go(context, '/register'), child: const Text('Create an account')),
+                    TextButton(onPressed: () => go(context, '/forgot-password'), child: const Text('Forgot password?')),
+                  ],
                 ),
                 gap(20),
                 Text(
@@ -425,10 +452,6 @@ class _AuthState extends State<AuthScreen> {
                 OutlinedButton(
                   onPressed: busy ? null : () => submit(demo: true),
                   child: const Text('Continue as demo citizen'),
-                ),
-                TextButton(
-                  onPressed: () => go(context, '/register'),
-                  child: const Text('Create an account'),
                 ),
               ],
             ],
@@ -1152,6 +1175,16 @@ class ProfileScreen extends StatelessWidget {
             Text(store.user?['email'] ?? '',
                 style: TextStyle(
                     color: Theme.of(context).colorScheme.onSurfaceVariant)),
+            if (store.user?['address'] is Map &&
+                (store.user?['address']['barangay'] ?? '').toString().isNotEmpty) ...[
+              gap(12),
+              Text('Address · ${[
+                store.user?['address']['line'],
+                store.user?['address']['barangay'],
+                store.user?['address']['city'],
+                store.user?['address']['province'],
+              ].where((part) => part != null && part.toString().isNotEmpty).join(', ')}'),
+            ],
             gap(24),
             Text('${store.reports.length} community reports'),
             gap(16),
@@ -1196,11 +1229,25 @@ class _EditProfileState extends State<EditProfile> {
   final key = GlobalKey<FormState>();
   late final name = TextEditingController(text: store.user?['name']),
       email = TextEditingController(text: store.user?['email']);
+  late final TextEditingController addressLine, barangay, city, province;
   bool busy = false;
+  @override
+  void initState() {
+    super.initState();
+    final address = store.user?['address'];
+    String value(String key) => address is Map ? (address[key] ?? '').toString() : '';
+    addressLine = TextEditingController(text: value('line'));
+    barangay = TextEditingController(text: value('barangay'));
+    city = TextEditingController(text: value('city'));
+    province = TextEditingController(text: value('province'));
+  }
   @override
   void dispose() {
     name.dispose();
     email.dispose();
+    for (final controller in [addressLine, barangay, city, province]) {
+      controller.dispose();
+    }
     super.dispose();
   }
 
@@ -1215,6 +1262,18 @@ class _EditProfileState extends State<EditProfile> {
               field('Full name', name),
               TextFormField(controller:email,readOnly:true,decoration:const InputDecoration(labelText:'Email address',helperText:'Email changes require verified account recovery.')),
               gap(),
+              if (store.user?['address'] is Map) ...[
+                const Text('Private address · separate from each road report'),
+                gap(),
+                TextFormField(controller:addressLine,decoration:const InputDecoration(labelText:'Street / house number (optional)')),
+                gap(),
+                TextFormField(controller:barangay,decoration:const InputDecoration(labelText:'Barangay'),validator:(s)=>s!=null&&s.trim().isNotEmpty&&s.trim().length<=120?null:'Enter your barangay.'),
+                gap(),
+                TextFormField(controller:city,decoration:const InputDecoration(labelText:'City / municipality'),validator:(s)=>s!=null&&s.trim().isNotEmpty&&s.trim().length<=120?null:'Enter your city or municipality.'),
+                gap(),
+                TextFormField(controller:province,decoration:const InputDecoration(labelText:'Province'),validator:(s)=>s!=null&&s.trim().isNotEmpty&&s.trim().length<=120?null:'Enter your province.'),
+                gap(),
+              ],
               action(
                 'Save profile',
                 busy
@@ -1229,6 +1288,12 @@ class _EditProfileState extends State<EditProfile> {
                             body: {
                               'name': name.text.trim(),
                               'email': email.text.trim(),
+                              if (store.user?['address'] is Map) 'address': {
+                                'line': addressLine.text.trim(),
+                                'barangay': barangay.text.trim(),
+                                'city': city.text.trim(),
+                                'province': province.text.trim(),
+                              },
                             },
                           );
                           await store.refresh();

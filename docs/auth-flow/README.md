@@ -4,7 +4,7 @@
 
 ## Pages and flow
 
-- Citizen browser and native app: log in or create an account before entering protected report/profile screens. Signup uses **About you** (name and email) and **Secure your account** (password and privacy explanation). Back preserves identity fields; browser passwords are not saved as drafts. Show/hide password and password-manager autofill are supported.
+- Citizen browser and native app: log in or create an account before entering protected report/profile screens. Signup uses **About you** (name and email), **Your address** (street or house number optional; barangay, city or municipality, and province required), and **Secure your account** (password and privacy explanation). Back preserves entered fields; browser passwords are not saved as drafts. Show/hide password and password-manager autofill are supported.
 - Admin and maintenance: login only. Authorized administrators provision staff accounts and assign maintenance membership. No public role selection is available in citizen signup.
 - All roles: explicit logout. Citizen logout clears the report draft; server logout invalidates its session. Staff settings provide a labelled Log out button, in addition to the existing sidebar action.
 - Automatic preview login and profile account switching are removed. A collapsed, clearly labelled fictional-demo option remains on login pages and only accesses seeded accounts without passwords. It cannot impersonate newly registered or provisioned accounts.
@@ -12,7 +12,7 @@
 
 ## Validation and session behavior
 
-New accounts require a trimmed name (maximum 100 characters), a normalized email (maximum 254), and a password of 15–128 characters. Spaces are supported, arbitrary character-composition rules are avoided, and a small set of obvious repeated/common passwords is rejected. This is not a comprehensive breached-password database. Case-insensitive duplicate emails are rejected. Registration always creates an active citizen, ignoring supplied role/team/active values.
+New citizen accounts require a trimmed name (maximum 100 characters), a normalized email (maximum 254), a private address (barangay, city or municipality, province; street or house number optional), and a password of 15–128 characters. Staff provisioning does not ask for a home address. Spaces are supported, arbitrary character-composition rules are avoided, and a small set of obvious repeated/common passwords is rejected. This is not a comprehensive breached-password database. Case-insensitive duplicate emails are rejected. Registration always creates an active citizen, ignoring supplied role/team/active values.
 
 The local Node API stores salted scrypt password hashes, compares them with timingSafeEqual, rate-limits registration/login attempts (20 per minute per loopback client/endpoint), issues random session tokens with eight-hour expiry, enforces active users and role ownership, and revokes tokens on logout. Login can require the requested portal role. `createServer({allowDemo:false})` disables demo endpoints; the named local demo server retains them for testing.
 
@@ -26,12 +26,12 @@ Email format validation does not establish ownership. New accounts explicitly ca
 - [USWDS: Create account](https://designsystem.digital.gov/templates/authentication-pages/create-account/) recommends simple account creation with limited distractions and explaining extra information requests.
 - [OWASP: Authentication](https://cheatsheetseries.owasp.org/cheatsheets/Authentication_Cheat_Sheet.html) informs password length without MFA, password-manager support, generic login errors, throttling and role/session checks.
 
-PATAG needs a name, email and password. It does not need birthday, government ID, sex, phone number or residential address to create a reporting account. Pothole location is collected during reporting. No staff role selector appears in citizen registration.
+PATAG asks for an address at the user’s request, separated from the pothole location collected when reporting. The address remains in the private account, can be corrected in Profile, and is excluded from public report cards. It does not ask for birthday, government ID, sex or phone number. No staff role selector appears in citizen registration.
 
 ## Verification
 
 - `npm run test:api`: seven tests, including normalization, duplicate handling, role injection, portal mismatch, demo disablement, token forgery/revocation and throttling.
-- `npm run test:auth`: two-step signup, back navigation, password visibility, logout/reload protection, wrong password, provisioned staff login, and 32 screen/theme/width combinations. Screenshots and results are in this directory.
+- `npm run test:auth`: three-step signup, back navigation, password visibility, logout/reload protection, wrong password, provisioned staff login, and 32 screen/theme/width combinations. Screenshots and results are in this directory.
 - `npm run test:preview`: complete citizen submission → LGU verify/assign → crew evidence/repair → LGU resolve → citizen feedback with explicit login.
 - `npm run test:preview-completion`: team/staff/settings/photo-publication workflow, now using password login for created crews.
 - Native baseline: 26 tests passed, plus a new targeted registration-step test; Flutter analysis is clean. Web production and portable preview builds pass with existing bundle-size warnings.

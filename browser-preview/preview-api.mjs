@@ -1,6 +1,6 @@
 const publicUser=({hash,salt,...u})=>u;
 async function passwordHash(password,salt,iterations=600000){const key=await crypto.subtle.importKey('raw',new TextEncoder().encode(password),'PBKDF2',false,['deriveBits']);const bytes=await crypto.subtle.deriveBits({name:'PBKDF2',salt:new TextEncoder().encode(salt),iterations,hash:'SHA-256'},key,256);return Array.from(new Uint8Array(bytes),b=>b.toString(16).padStart(2,'0')).join('');}
-import {seed,teams,statuses,candidates,transition,publicReport,workspace,manageWorkspace,registrationFields} from './domain.mjs';
+import {seed,teams,statuses,candidates,transition,publicReport,workspace,manageWorkspace,registrationFields,addressFields} from './domain.mjs';
 const KEY='patag-hosted-preview-v1';
 let memory;const attempts=new Map();
 function read(){try{return workspace(JSON.parse(localStorage.getItem(KEY))||seed())}catch{return workspace(memory||seed())}}
@@ -28,10 +28,10 @@ export function installPreviewApi(){
     return response(issue(u));
    }
    if(p==='/auth/register'){
-    const fields=registrationFields(body);
+    const fields=registrationFields(body,{addressRequired:true});
     const salt=crypto.randomUUID(),hash=await passwordHash(fields.password,salt);db=read();db.sessions??={};
     if(db.users.some(u=>u.email.toLowerCase()===fields.email))return response({error:'Unable to create an account with these details. Try signing in or recovering access.'},409);
-    const u=manageWorkspace(db,{role:'admin',id:'registration'},'/users',{name:fields.name,email:fields.email,role:'citizen'},'POST');u.salt=salt;u.hash=hash;u.iterations=600000;u.emailVerified=false;
+    const u=manageWorkspace(db,{role:'admin',id:'registration'},'/users',{name:fields.name,email:fields.email,role:'citizen'},'POST');u.salt=salt;u.hash=hash;u.iterations=600000;u.emailVerified=false;u.address=fields.address;
     return response(issue(u),201);
    }
    if(p==='/auth/recovery')return response({message:'This is a browser preview. No recovery email was sent.'});
@@ -40,7 +40,7 @@ export function installPreviewApi(){
    if(!user)return response({error:'Session expired. Sign in again.'},401);
    if(p==='/bootstrap')return response({user:publicUser(user),reports:db.reports.filter(r=>user.role==='admin'||(user.role==='maintenance'?r.teamId===user.teamId:r.reporterId===user.id)),teams:db.teams,settings:db.settings,demo:true,users:user.role==='admin'?db.users.map(publicUser):[],notifications:db.notifications.filter(n=>n.role===user.role&&(n.role!=='citizen'||n.userId===user.id)&&(n.role!=='maintenance'||n.teamId===user.teamId)),statuses});
    if(p==='/auth/logout'){delete db.sessions[token];save(db);sessionStorage.removeItem('patag-token');return response({ok:true})}
-   if(p==='/me'){if(!body.name?.trim()||!/^\S+@\S+\.\S+$/.test(body.email))return response({error:'Enter a name and valid email.'},400);if(body.email.trim().toLowerCase()!==user.email.toLowerCase())return response({error:'Email changes require verified account recovery and are unavailable in this preview.'},400);user.name=body.name.trim();save(db);return response(publicUser(user))}
+   if(p==='/me'){if(!body.name?.trim()||!/^\S+@\S+\.\S+$/.test(body.email))return response({error:'Enter a name and valid email.'},400);if(body.email.trim().toLowerCase()!==user.email.toLowerCase())return response({error:'Email changes require verified account recovery and are unavailable in this preview.'},400);const address=body.address?addressFields(body.address):null;user.name=body.name.trim();if(address&&user.role==='citizen')user.address=address;save(db);return response(publicUser(user))}
    if(['/settings','/teams','/users'].includes(p)&&['POST','PATCH'].includes(method)){
     if(p==='/users'&&method==='POST'&&user.role==='admin')registrationFields(body);
     const result=manageWorkspace(db,user,p,body,method);
