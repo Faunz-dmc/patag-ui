@@ -5,6 +5,7 @@
 ## Pages and flow
 
 - Citizen browser and native app: log in or create an account before entering protected report/profile screens. Signup uses **About you** (name and email), **Your address** (street or house number optional; barangay, city or municipality, and province required), and **Secure your account** (password and privacy explanation). Back preserves entered fields; browser passwords are not saved as drafts. Show/hide password and password-manager autofill are supported.
+- The browser login uses a responsive split composition: PATAG identity, mascot and road-safety message at left; focused credentials at right. At tablet and phone widths it becomes a compact branded header above the form. Registration and recovery reuse the same shell, and demo access is a quiet disclosure instead of a separate boxed card. No social-provider buttons are shown.
 - Admin and maintenance: login only. Authorized administrators provision staff accounts and assign maintenance membership. No public role selection is available in citizen signup.
 - All roles: explicit logout. Citizen logout clears the report draft; server logout invalidates its session. Staff settings provide a labelled Log out button, in addition to the existing sidebar action.
 - Automatic preview login and profile account switching are removed. A collapsed, clearly labelled fictional-demo option remains on login pages and only accesses seeded accounts without passwords. It cannot impersonate newly registered or provisioned accounts.

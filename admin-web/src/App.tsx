@@ -49,6 +49,8 @@ import {
   Clock,
   FileCheck,
   Copy,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 import {
   MapContainer,
@@ -74,6 +76,7 @@ import "leaflet/dist/leaflet.css";
 import "./styles/app.css";
 import "./styles/premium.css";
 import "./styles/visual-system.css";
+import "./styles/login-redesign.css";
 import { useTheme } from "./theme";
 
 const admin = role === "admin",
@@ -301,98 +304,124 @@ function Login() {
   }
   return (
     <main className="login">
-      <section className="login-story">
-        <Logo />
-        <div>
-          <p>Pa-tag lubak, lubak patag.</p>
-          <h1>
-            Better roads.
-            <br />
-            Built together.
-          </h1>
-          <p>
-            {admin
-              ? "Turn community reports into coordinated action."
-              : "One repair at a time. Make the way safer for everyone."}
+      <div className="login-card">
+        <section className="login-story">
+          <div className="login-story-top">
+            <Logo />
+          </div>
+          <div className="login-story-body">
+            <h1>
+              {admin ? "Better roads." : "Safe roads."}
+              <br />
+              {admin ? "Built together." : "Repaired fast."}
+            </h1>
+            <p className="login-story-desc">
+              {admin
+                ? "Turn community reports into coordinated municipal action."
+                : "One repair at a time. Make the way safer for everyone."}
+            </p>
+          </div>
+          <small className="login-story-footer">
+            IT 305 · Bulacan State University · Academic demonstration
+          </small>
+        </section>
+        <section className="login-form">
+          <div className="login-accent-mark" aria-hidden="true">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round">
+              <line x1="12" y1="2" x2="12" y2="22" />
+              <line x1="2" y1="12" x2="22" y2="12" />
+              <line x1="4.93" y1="4.93" x2="19.07" y2="19.07" />
+              <line x1="19.07" y1="4.93" x2="4.93" y2="19.07" />
+            </svg>
+          </div>
+          <span className="pill-label">
+            {admin ? "LGU administrator" : "Road maintenance"}
+          </span>
+          <h2>{recovery ? "Recover access" : (admin ? "Welcome to LGU Portal" : "Crew Workspace Sign In")}</h2>
+          <p className="login-subtitle">
+            {recovery
+              ? "Request a password reset for your staff account."
+              : (admin
+                  ? "Access your tasks, reports, and teams anytime, anywhere — all in one place."
+                  : "Access assigned road work orders, document repairs, and record evidence.")}
           </p>
-          <img src="/assets/patag-mascot.png" alt="PATAG traffic cone mascot" />
-        </div>
-        <small>
-          IT 305 · Bulacan State University · Academic demonstration
-        </small>
-      </section>
-      <section className="login-form">
-        <span className="pill-label">
-          {admin ? "LGU administrator" : "Road maintenance"}
-        </span>
-        <h2>{recovery ? "Recover access" : "A clearer road ahead."}</h2>
-        <p>
-          {recovery
-            ? "Request a password reset."
-            : "Sign in to your PATAG workspace."}
-        </p>
-        <form onSubmit={run}>
-          <label>
-            Email address
-            <input
-              name="email"
-              type="email"
-              autoComplete="email"
-              required
-              placeholder="you@example.test"
-            />
-          </label>
-          {!recovery && (
+          <form onSubmit={run}>
             <label>
-              Password
+              Email address
               <input
-                name="password"
-                type={showPassword ? "text" : "password"}
-                autoComplete="current-password"
+                name="email"
+                type="email"
+                autoComplete="email"
                 required
-                minLength={1}
-                placeholder="Enter your password"
+                placeholder="you@example.test"
               />
             </label>
-          )}
-          {!recovery && <button type="button" className="text-button" aria-pressed={showPassword} onClick={()=>setShowPassword(!showPassword)}>{showPassword?'Hide password':'Show password'}</button>}
-          {error && (
-            <p role="alert" className="error">
-              {error}
+            {!recovery && (
+              <label className="password-label">
+                Password
+                <div className="password-wrap">
+                  <input
+                    name="password"
+                    type={showPassword ? "text" : "password"}
+                    autoComplete="current-password"
+                    required
+                    minLength={1}
+                    placeholder="Enter your password"
+                  />
+                  <button
+                    type="button"
+                    className="password-toggle-btn"
+                    aria-label={showPassword ? "Hide password" : "Show password"}
+                    aria-pressed={showPassword}
+                    onClick={() => setShowPassword(!showPassword)}
+                  >
+                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+                </div>
+              </label>
+            )}
+            {error && (
+              <p role="alert" className="error">
+                {error}
+              </p>
+            )}
+            {message && <p role="status">{message}</p>}
+            <button className="primary submit-btn" disabled={loading}>
+              {loading
+                ? "Connecting…"
+                : recovery
+                  ? "Request recovery"
+                  : "Sign in"}
+              <ArrowRight size={16} />
+            </button>
+          </form>
+          <button
+            className="text-button forgot-btn"
+            onClick={() => {
+              setRecovery(!recovery);
+              setMessage("");
+            }}
+          >
+            {recovery ? "Back to sign in" : "Forgot password?"}
+          </button>
+          <div className="login-divider">
+            <span>or continue with</span>
+          </div>
+          <details className="demo-access" open>
+            <summary>Explore fictional demo data</summary>
+            <strong>Explore the working demo</strong>
+            <p>
+              Fictional reports, local API, and role-based workflows. No official
+              LGU records.
             </p>
-          )}
-          {message && <p role="status">{message}</p>}
-          <button className="primary" disabled={loading}>
-            {loading
-              ? "Connecting…"
-              : recovery
-                ? "Request recovery"
-                : "Sign in"}
-            <ArrowRight size={16} />
-          </button>
-        </form>
-        <button
-          className="text-button"
-          onClick={() => {
-            setRecovery(!recovery);
-            setMessage("");
-          }}
-        >
-          {recovery ? "Back to sign in" : "Forgot password?"}
-        </button>
-        <details className="demo-access"><summary>Explore fictional demo data</summary>
-          <strong>Explore the working demo</strong>
-          <p>
-            Fictional reports, local API, and role-based workflows. No official
-            LGU records.
-          </p>
-          <button onClick={demo} disabled={loading}>
-            Continue as {admin ? "LGU administrator" : "Road Crew Alpha"}
-            <ArrowUpRight size={16} />
-          </button>
-        </details>
-        <p>Staff accounts are provided by an authorized administrator. Contact your administrator if you need access.</p>
-      </section>
+            <button onClick={demo} disabled={loading} className="demo-action-btn">
+              Continue as {admin ? "LGU administrator" : "Road Crew Alpha"}
+              <ArrowUpRight size={16} />
+            </button>
+          </details>
+          <p className="login-footnote">Staff accounts are provided by an authorized administrator. Contact your administrator if you need access.</p>
+        </section>
+      </div>
     </main>
   );
 }
