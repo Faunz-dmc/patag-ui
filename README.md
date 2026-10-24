@@ -119,3 +119,5 @@ git push -u origin main
 ```
 
 Check for an existing repository before running create. If one exists, add its verified remote instead. No secrets, `.env` files, build outputs, node_modules or local demo records are tracked.
+
+Current account journey: [login, registration and logout](docs/auth-flow/README.md). Open the web preview at `http://127.0.0.1:8080/#/citizen/login`.

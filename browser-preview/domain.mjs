@@ -82,3 +82,14 @@ export function manageWorkspace(db,user,p,body,method){
  }
  fail('Unknown workspace operation.',404);
 }
+
+export function registrationFields(body) {
+ const name=typeof body.name==='string'?body.name.trim():'';
+ const email=typeof body.email==='string'?body.email.trim().toLowerCase():'';
+ const password=body.password;
+ if(!name||name.length>100)throw Object.assign(Error('Enter your name (up to 100 characters).'),{status:400});
+ if(email.length>254||!/^\S+@\S+\.\S+$/.test(email))throw Object.assign(Error('Enter a valid email address.'),{status:400});
+ if(typeof password!=='string'||[...password].length<15||[...password].length>128)throw Object.assign(Error('Use a password of 15 to 128 characters. A few unrelated words work well.'),{status:400});
+ if(/^(.)\1+$/.test(password)||['passwordpassword','123456789012345','qwertyuiopasdfgh'].includes(password.toLowerCase()))throw Object.assign(Error('Choose a less predictable password.'),{status:400});
+ return {name,email,password};
+}

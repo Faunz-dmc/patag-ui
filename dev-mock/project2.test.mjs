@@ -35,7 +35,7 @@ test('PDF FR-01 and role ownership: real registration/login, rejection and notif
  const base=`http://127.0.0.1:${server.address().port}/api`;
  async function call(path,body,token,method){const r=await fetch(base+path,{method:method||(body?'POST':'GET'),headers:{'Content-Type':'application/json',...(token?{Authorization:`Bearer ${token}`}:{})},body:body?JSON.stringify(body):undefined});return {status:r.status,data:await r.json()};}
  try{
-  const input={name:'Audit Citizen',email:'audit@example.test',password:'Audit-Test-1234'};
+  const input={name:'Audit Citizen',email:'audit@example.test',password:'Audit-Test-12345'};
   assert.equal((await call('/auth/register',{...input,password:'short'})).status,400);
   const registered=await call('/auth/register',input);assert.equal(registered.status,201);const token=registered.data.token;
   assert.equal(registered.data.user.hash,undefined);assert.equal(registered.data.user.salt,undefined);
@@ -73,5 +73,22 @@ test('workspace settings, crew provisioning and public photo approval connect ac
   assert.equal((await call(`/reports/${id}/events`,{action:'publication',approved:true},admin)).status,200);
   assert.ok((await publicPhotos()).some(p=>p.url===upload.url));
   await call(`/reports/${id}/events`,{action:'publication',approved:false},admin);assert.ok(!(await publicPhotos()).some(p=>p.url===upload.url));
+ }finally{await new Promise(r=>server.close(r));}
+});
+
+test('registration normalization, portal restriction, session revocation and throttling',async()=>{
+ const server=await createServer({persist:false,allowDemo:false});await new Promise(r=>server.listen(0,'127.0.0.1',r));
+ const base=`http://127.0.0.1:${server.address().port}/api`;
+ const call=async(p,body,token)=>{const r=await fetch(base+p,{method:body?'POST':'GET',headers:{'Content-Type':'application/json',...(token?{Authorization:'Bearer '+token}:{})},body:body?JSON.stringify(body):undefined});return {status:r.status,data:await r.json()};};
+ try{
+  assert.equal((await call('/auth/demo',{role:'admin'})).status,404);
+  const input={name:'  Test Reporter  ',email:'  NORMALIZED@example.test ',password:'Several roads lead home!',role:'admin',active:false,teamId:'team-1'};
+  const created=await call('/auth/register',input);assert.equal(created.status,201);assert.equal(created.data.user.role,'citizen');assert.equal(created.data.user.email,'normalized@example.test');assert.equal(created.data.user.active,true);assert.equal(created.data.user.teamId,undefined);assert.equal(created.data.user.emailVerified,false);
+  assert.equal((await call('/auth/register',{...input,email:'normalized@example.test'})).status,409);
+  assert.equal((await call('/auth/login',{email:'NORMALIZED@EXAMPLE.TEST',password:input.password,role:'admin'})).status,401);
+  const login=await call('/auth/login',{email:'NORMALIZED@EXAMPLE.TEST',password:input.password,role:'citizen'});assert.equal(login.status,200);
+  assert.equal((await call('/bootstrap',null,'preview:'+created.data.user.id+':forged')).status,401);
+  await call('/auth/logout',{},login.data.token);assert.equal((await call('/bootstrap',null,login.data.token)).status,401);
+  let last;for(let i=0;i<21;i++)last=await call('/auth/login',{email:'absent@example.test',password:'wrong'});assert.equal(last.status,429);
  }finally{await new Promise(r=>server.close(r));}
 });

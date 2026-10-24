@@ -81,3 +81,9 @@ CSV/PDF exports are generated in the admin frontend from its authorized report s
 - Admin `POST /users` takes name/email/password/role/teamId and creates an account. Maintenance roles require an active team. `PATCH /users` also updates team membership. Password material is never returned by these endpoints.
 - Demo-only `GET /auth/demo/accounts` lists active fictional accounts; `POST /auth/demo` optionally selects `userId` within a role. Do not expose demo authentication publicly.
 - Admin report event `{action:"publication", approved:true|false}` controls public photo visibility. New before/after evidence clears approval. Original photos remain available to authorized roles. This is a publication workflow, not automatic face/plate redaction or secure object-storage authorization.
+
+## Authentication follow-up
+
+Citizen signup now requires name (1–100 characters), normalized email (maximum 254), and a password of 15–128 characters; the same creation policy applies to staff provisioning. Optional `role` on `/auth/login` must match the account. `/auth/register` ignores role/team/active injection and always creates an active citizen with `emailVerified:false`.
+
+Sessions expire after eight hours and are revoked on logout. Registration/login are limited to 20 requests per minute per client/endpoint in the Node service. Demo endpoints only select seeded accounts without password hashes; `createServer({allowDemo:false})` disables them. `/me` cannot change email without a verified recovery workflow. See `docs/auth-flow/README.md` for preview boundaries and test evidence.

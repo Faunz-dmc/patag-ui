@@ -259,15 +259,15 @@ class _AuthState extends State<AuthScreen> {
   final key = GlobalKey<FormState>();
   final name = TextEditingController(),
       email = TextEditingController(),
-      password = TextEditingController(),
-      confirm = TextEditingController();
+      password = TextEditingController();
   bool hidden = true, busy = false, privacy = false;
+  int signupStep = 0;
   String error = '', success = '';
   bool get register => widget.kind == 'register';
   bool get recovery => widget.kind == 'forgot-password';
   @override
   void dispose() {
-    for (final c in [name, email, password, confirm]) {
+    for (final c in [name, email, password]) {
       c.dispose();
     }
     super.dispose();
@@ -275,6 +275,7 @@ class _AuthState extends State<AuthScreen> {
 
   Future<void> submit({bool demo = false}) async {
     if (!demo && !key.currentState!.validate()) return;
+    if(register && signupStep == 0){setState(() {signupStep=1;error='';});return;}
     if (register && !privacy) {
       setState(() => error = 'Please acknowledge the privacy information.');
       return;
@@ -303,6 +304,7 @@ class _AuthState extends State<AuthScreen> {
                   'name': name.text.trim(),
                   'email': email.text.trim(),
                   'password': password.text,
+                  'role': 'citizen',
                 },
         );
         if (mounted) home(context);
@@ -343,7 +345,9 @@ class _AuthState extends State<AuthScreen> {
                     fontSize: 12),
               ),
               gap(24),
-              if (register) field('Full name', name),
+              if(register) ...[Text('Step ${signupStep+1} of 2 · ${signupStep==0 ? 'About you' : 'Secure your account'}'), gap(), LinearProgressIndicator(value:(signupStep+1)/2), gap(20)],
+              if (register && signupStep==0) field('Full name', name),
+              if(!register || signupStep==0)
               TextFormField(
                 controller: email,
                 keyboardType: TextInputType.emailAddress,
@@ -355,7 +359,7 @@ class _AuthState extends State<AuthScreen> {
                         : 'Enter a valid email address.',
               ),
               gap(),
-              if (!recovery) ...[
+              if (!recovery && (!register || signupStep==1)) ...[
                 TextFormField(
                   controller: password,
                   obscureText: hidden,
@@ -376,21 +380,12 @@ class _AuthState extends State<AuthScreen> {
                       ),
                     ),
                   ),
-                  validator: (s) => s != null && s.length >= 8
+                  validator: (s) => s != null && (register ? s.runes.length >= 15 && s.runes.length <= 128 : s.isNotEmpty)
                       ? null
-                      : 'Use at least 8 characters.',
+                      : register ? 'Use 15 to 128 characters.' : 'Enter your password.',
                 ),
                 gap(),
-                if (register)
-                  TextFormField(
-                    controller: confirm,
-                    obscureText: hidden,
-                    decoration: const InputDecoration(
-                      labelText: 'Confirm password',
-                    ),
-                    validator: (s) =>
-                        s == password.text ? null : 'Passwords do not match.',
-                  ),
+                if(register) const Text('Use 15–128 characters. A few unrelated words work well. Email ownership is not verified in this local preview.'),
                 if (register)
                   CheckboxListTile(
                     contentPadding: EdgeInsets.zero,
@@ -402,7 +397,7 @@ class _AuthState extends State<AuthScreen> {
                   ),
               ],
               if (error.isNotEmpty)
-                Text(error, style: const TextStyle(color: Color(0xFF8C3212))),
+                Text(error, style: TextStyle(color: Theme.of(context).colorScheme.error)),
               if (success.isNotEmpty) Text(success),
               gap(20),
               action(
@@ -411,10 +406,11 @@ class _AuthState extends State<AuthScreen> {
                     : recovery
                         ? 'Request recovery'
                         : register
-                            ? 'Create account'
+                            ? (signupStep==0 ? 'Continue' : 'Create account')
                             : 'Sign in',
                 busy ? null : () => submit(),
               ),
+              if(register && signupStep==1) TextButton(onPressed:busy ? null : () => setState(() {signupStep=0;error='';}),child:const Text('Back to your details')),
               if (!register && !recovery) ...[
                 TextButton(
                   onPressed: () => go(context, '/forgot-password'),
@@ -1217,8 +1213,8 @@ class _EditProfileState extends State<EditProfile> {
             padding: const EdgeInsets.all(24),
             children: [
               field('Full name', name),
-              field('Email address', email,
-                  keyboard: TextInputType.emailAddress),
+              TextFormField(controller:email,readOnly:true,decoration:const InputDecoration(labelText:'Email address',helperText:'Email changes require verified account recovery.')),
+              gap(),
               action(
                 'Save profile',
                 busy

@@ -1,3 +1,5 @@
+> Authentication follow-up: [Current login and registration flow](../auth-flow/README.md) supersedes the account-switching steps below. Registration is now a two-step signed-out flow; created staff use their password.
+
 # Connected web-preview completion
 
 24 October 2026. The user clarified that the target is the web preview, with no hosting or Android device setup. This work completes the missing demonstration controls while retaining the current PATAG visual system. It does not present browser storage or demo role switching as deployed authentication or cross-device persistence.

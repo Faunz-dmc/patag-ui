@@ -3,9 +3,10 @@ import {readFile,writeFile,mkdir} from 'node:fs/promises';
 import {fileURLToPath} from 'node:url';
 import path from 'node:path';
 import {randomUUID,scryptSync,timingSafeEqual} from 'node:crypto';
-import {seed,teams,statuses,candidates,transition,publicReport,workspace,manageWorkspace} from './domain.mjs';
-export async function createServer({persist=true}={}){
- const dir=path.dirname(fileURLToPath(import.meta.url)),dataDir=path.join(dir,'data');let db=seed();const sessions=new Map();
+import {seed,teams,statuses,candidates,transition,publicReport,workspace,manageWorkspace,registrationFields} from './domain.mjs';
+export async function createServer({persist=true,allowDemo=true}={}){
+ const dir=path.dirname(fileURLToPath(import.meta.url)),dataDir=path.join(dir,'data');let db=seed();const sessions=new Map();const attempts=new Map();
+ const issue=u=>{const token=randomUUID();sessions.set(token,{userId:u.id,expires:Date.now()+8*60*60*1000});return {token,user:publicUser(u)};};
  if(persist){await mkdir(dataDir,{recursive:true});try{db=JSON.parse(await readFile(path.join(dataDir,'db.json'),'utf8'));}catch{}}
  workspace(db);
  const save=async()=>{if(persist)await writeFile(path.join(dataDir,'db.json'),JSON.stringify(db,null,2));};
@@ -19,19 +20,32 @@ export async function createServer({persist=true}={}){
    if(p==='/demo-evidence.svg'||p==='/demo-after.svg'){res.writeHead(200,{'Content-Type':'image/svg+xml'});res.end(`<svg xmlns="http://www.w3.org/2000/svg" width="800" height="450" viewBox="0 0 800 450"><rect width="800" height="450" fill="#dde2e4"/><path d="M0 100L800 25V450H0" fill="#636b72"/><path d="M0 270L800 190" stroke="#f7f1eb" stroke-width="9" stroke-dasharray="90 60"/>${p.includes('after')?'<path d="M280 260l190-45 90 90-220 40z" fill="#414951"/>':'<path d="M250 255l100-54 144 25 80 65-92 70-175-20z" fill="#26313b"/><path d="M270 262l90-37 120 22 48 40-62 39-143-10z" fill="#182b49"/>'}<rect x="25" y="24" width="240" height="34" rx="6" fill="#f7f1eb"/><text x="40" y="47" font-family="Arial" font-size="17" fill="#182b49">Illustrated demo ${p.includes('after')?'repair':'evidence'}</text></svg>`);return;}
    if(p.startsWith('/uploads/')){const n=path.basename(p);if(!/^[a-f0-9-]+\.(png|jpg|webp)$/.test(n))throw Error('Invalid file.');const ext=path.extname(n);res.writeHead(200,{'Content-Type':ext==='.jpg'?'image/jpeg':`image/${ext.slice(1)}`,'X-Content-Type-Options':'nosniff'});res.end(await readFile(path.join(dataDir,n)));return;}
    let body={};if(['POST','PATCH'].includes(req.method)){let raw='';for await(const chunk of req){raw+=chunk;if(raw.length>12*1024*1024){send(413,{error:'Photo must be under 8 MB.'});return;}}try{body=JSON.parse(raw||'{}');}catch{send(400,{error:'Invalid JSON.'});return;}}
-   if(p==='/auth/demo/accounts'){send(200,db.users.filter(u=>u.active).map(publicUser));return;}
-   if(p==='/auth/demo'&&req.method==='POST'){const u=db.users.find(u=>u.role===body.role&&u.active&&(!body.userId||u.id===body.userId));if(!u){send(403,{error:'Demo role unavailable.'});return;}const token=randomUUID();sessions.set(token,u.id);send(200,{token,user:publicUser(u)});return;}
-   if(p==='/auth/register'&&req.method==='POST'){if(!body.name?.trim()||!/^\S+@\S+\.\S+$/.test(body.email)||!body.password||body.password.length<8){send(400,{error:'Enter a name, valid email, and password of at least 8 characters.'});return;}if(db.users.some(u=>u.email===body.email)){send(409,{error:'Email is already registered.'});return;}const salt=randomUUID(),u={id:randomUUID(),role:'citizen',name:body.name,email:body.email,active:true,salt,hash:scryptSync(body.password,salt,64).toString('hex')};db.users.push(u);await save();const token=randomUUID();sessions.set(token,u.id);send(201,{token,user:publicUser(u)});return;}
-   if(p==='/auth/login'&&req.method==='POST'){const u=db.users.find(u=>u.email===body.email&&u.active);if(!u?.hash||!body.password||!timingSafeEqual(Buffer.from(u.hash,'hex'),scryptSync(body.password,u.salt,64))){send(401,{error:'Email or password is incorrect. For seeded accounts, use demo access.'});return;}const token=randomUUID();sessions.set(token,u.id);send(200,{token,user:publicUser(u)});return;}
+   if(p.startsWith('/auth/demo')&&!allowDemo){send(404,{error:'Endpoint not found.'});return;}
+   if(p==='/auth/demo/accounts'){send(200,db.users.filter(u=>u.active&&!u.hash).map(publicUser));return;}
+   if(p==='/auth/demo'&&req.method==='POST'){const u=db.users.find(u=>u.role===body.role&&u.active&&!u.hash&&(!body.userId||u.id===body.userId));if(!u){send(403,{error:'Demo role unavailable.'});return;}send(200,issue(u));return;}
+   if(['/auth/register','/auth/login'].includes(p)&&req.method==='POST'){
+    const key=req.socket.remoteAddress+':'+p, now=Date.now();let attempt=attempts.get(key);if(!attempt||attempt.until<now){attempt={count:0,until:now+60000};attempts.set(key,attempt);}if(++attempt.count>20){send(429,{error:'Too many attempts. Wait a minute and try again.'});return;}
+   }
+   if(p==='/auth/register'&&req.method==='POST'){
+    const fields=registrationFields(body);
+    if(db.users.some(u=>u.email.toLowerCase()===fields.email)){send(409,{error:'Unable to create an account with these details. Try signing in or recovering access.'});return;}
+    const salt=randomUUID(),u={id:randomUUID(),role:'citizen',name:fields.name,email:fields.email,active:true,emailVerified:false,salt,hash:scryptSync(fields.password,salt,64).toString('hex')};db.users.push(u);await save();send(201,issue(u));return;
+   }
+   if(p==='/auth/login'&&req.method==='POST'){
+    const email=typeof body.email==='string'?body.email.trim().toLowerCase():'';const u=db.users.find(u=>u.email.toLowerCase()===email&&u.active);
+    const password=typeof body.password==='string'&&body.password.length<=256?body.password:'';
+    const candidate=scryptSync(password,u?.salt||'invalid-account',64);const valid=u?.hash&&timingSafeEqual(Buffer.from(u.hash,'hex'),candidate);
+    if(!valid||(body.role&&u.role!==body.role)){send(401,{error:'Email or password is incorrect for this portal.'});return;}send(200,issue(u));return;
+   }
    if(p==='/auth/recovery'&&req.method==='POST'){if(!/^\S+@\S+\.\S+$/.test(body.email)){send(400,{error:'Enter a valid email.'});return;}send(200,{message:'Demo recovery request recorded. No email service is configured.'});return;}
-   const user=db.users.find(u=>u.id===sessions.get((req.headers.authorization||'').replace('Bearer ',''))&&u.active);
+   const session=sessions.get((req.headers.authorization||'').replace('Bearer ',''));const user=db.users.find(u=>u.id===session?.userId&&session.expires>Date.now()&&u.active);
    if(p==='/public/reports'&&req.method==='GET'){send(200,db.reports.filter(r=>!['Rejected','Duplicate'].includes(r.status)).map(publicReport));return;}
    if(!user){send(401,{error:'Session expired. Sign in again.'});return;}
    if(p==='/auth/logout'){sessions.delete((req.headers.authorization||'').replace('Bearer ',''));send(200,{ok:true});return;}
-   if(p==='/me'&&req.method==='PATCH'){if(!body.name?.trim()||!/^\S+@\S+\.\S+$/.test(body.email)){send(400,{error:'Name and valid email are required.'});return;}user.name=body.name;user.email=body.email;await save();send(200,publicUser(user));return;}
+   if(p==='/me'&&req.method==='PATCH'){if(!body.name?.trim()||!/^\S+@\S+\.\S+$/.test(body.email)){send(400,{error:'Name and valid email are required.'});return;}if(body.email.trim().toLowerCase()!==user.email.toLowerCase()){send(400,{error:'Email changes require verified account recovery.'});return;}user.name=body.name.trim();await save();send(200,publicUser(user));return;}
    if(p==='/bootstrap'){send(200,{reports:db.reports.filter(r=>user.role==='admin'||(user.role==='citizen'?r.reporterId===user.id:r.teamId===user.teamId)),teams:db.teams,settings:db.settings,demo:true,users:user.role==='admin'?db.users.map(publicUser):[],notifications:db.notifications.filter(n=>n.role===user.role&&(n.role!=='citizen'||n.userId===user.id)&&(n.role!=='maintenance'||n.teamId===user.teamId)),user:publicUser(user),statuses});return;}
    if(['/settings','/teams','/users'].includes(p)&&['POST','PATCH'].includes(req.method)){
-    if(p==='/users'&&req.method==='POST'&&(!body.password||body.password.length<8)){send(400,{error:'Use a temporary password of at least 8 characters.'});return;}
+    if(p==='/users'&&req.method==='POST'&&user.role==='admin')registrationFields(body);
     const result=manageWorkspace(db,user,p,body,req.method);
     if(p==='/users'&&req.method==='POST'){result.salt=randomUUID();result.hash=scryptSync(body.password,result.salt,64).toString('hex');}
     await save();send(req.method==='POST'?201:200,p==='/users'?publicUser(result):result);return;

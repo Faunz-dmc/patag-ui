@@ -257,6 +257,7 @@ function Login() {
   const [error, setError] = useState(""),
     [loading, setLoading] = useState(false),
     [recovery, setRecovery] = useState(false),
+    [showPassword, setShowPassword] = useState(false),
     [message, setMessage] = useState("");
   const run = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -273,6 +274,7 @@ function Login() {
         const r = await request<{ token: string; user: User }>("/auth/login", {
           email: f.get("email"),
           password: f.get("password"),
+          role,
         });
         if (r.user.role !== role)
           throw Error("This account belongs to a different portal.");
@@ -345,14 +347,15 @@ function Login() {
               Password
               <input
                 name="password"
-                type="password"
+                type={showPassword ? "text" : "password"}
                 autoComplete="current-password"
                 required
-                minLength={8}
+                minLength={1}
                 placeholder="Enter your password"
               />
             </label>
           )}
+          {!recovery && <button type="button" className="text-button" aria-pressed={showPassword} onClick={()=>setShowPassword(!showPassword)}>{showPassword?'Hide password':'Show password'}</button>}
           {error && (
             <p role="alert" className="error">
               {error}
@@ -377,7 +380,7 @@ function Login() {
         >
           {recovery ? "Back to sign in" : "Forgot password?"}
         </button>
-        <div className="demo-access">
+        <details className="demo-access"><summary>Explore fictional demo data</summary>
           <strong>Explore the working demo</strong>
           <p>
             Fictional reports, local API, and role-based workflows. No official
@@ -387,7 +390,8 @@ function Login() {
             Continue as {admin ? "LGU administrator" : "Road Crew Alpha"}
             <ArrowUpRight size={16} />
           </button>
-        </div>
+        </details>
+        <p>Staff accounts are provided by an authorized administrator. Contact your administrator if you need access.</p>
       </section>
     </main>
   );
@@ -2262,7 +2266,7 @@ function UsersPage() {
             {!selected.id && <>
               <label>Full name<input name="name" required autoComplete="name"/></label>
               <label>Email address<input name="email" type="email" required autoComplete="off"/></label>
-              <label>Temporary demo password<input name="password" type="password" minLength={8} required autoComplete="new-password"/></label>
+              <label>Temporary demo password<input name="password" type="password" minLength={15} maxLength={128} required autoComplete="new-password"/></label>
               <p>Use fictional details and a demo-only password.</p>
             </>}
             <label>Maintenance team<select name="teamId" aria-label="Maintenance team" defaultValue={selected.teamId || ""}><option value="">Not assigned (non-maintenance roles)</option>{data.teams.filter(t=>t.active).map(t=><option key={t.id} value={t.id}>{t.name}</option>)}</select></label>
@@ -2702,13 +2706,9 @@ function Activity() {
     </>
   );
 }
-function DemoAccountSwitcher() {
-  const {data}=useData();const [accounts,setAccounts]=useState<User[]>([]);const [error,setError]=useState("");
-  useEffect(()=>{if(data.demo)void request<User[]>("/auth/demo/accounts").then(setAccounts).catch(()=>{});},[data.demo]);
-  if(!data.demo)return null;
-  return <section className="settings-row"><div><h2>Preview account</h2><p>Try the workflow as a different fictional account in this role.</p></div><form className="panel" onSubmit={async(e)=>{e.preventDefault();const f=new FormData(e.currentTarget);try{const result=await request<{token:string}>("/auth/demo",{role:data.user.role,userId:f.get("userId")});sessionStorage.setItem("patag-token",result.token);location.reload();}catch(e){setError((e as Error).message);}}}><label>Account<select name="userId" aria-label="Account" defaultValue={data.user.id}>{accounts.filter(u=>u.role===data.user.role).map(u=><option key={u.id} value={u.id}>{u.name} · {u.email}</option>)}</select></label>{error&&<p role="alert" className="error">{error}</p>}<button className="button">Switch preview account</button></form></section>;
-}
+
 function SettingsPage() {
+  const navigate = useNavigate();
   const { data, refresh, notify } = useData();
   const [error, setError] = useState(""),
     [enabled, setEnabled] = useState(
@@ -2720,7 +2720,8 @@ function SettingsPage() {
         title={admin ? "Workspace settings" : "Profile & settings"}
         description="Profile and preferences for this demonstration workspace."
       />
-      <DemoAccountSwitcher/>
+
+      <button className="button" onClick={async()=>{try{await request('/auth/logout',{});}finally{sessionStorage.removeItem('patag-token');navigate(base+'/login',{replace:true});}}}>Log out</button>
       <section className="settings-row">
         <div>
           <h2>Your profile</h2>
@@ -2754,6 +2755,7 @@ function SettingsPage() {
               name="email"
               type="email"
               defaultValue={data.user.email}
+              readOnly
               required
             />
           </label>

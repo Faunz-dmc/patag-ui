@@ -1,3 +1,4 @@
+import {gotoDemo} from './demo-session.mjs';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import {createRequire} from 'node:module';
@@ -16,7 +17,7 @@ try {
    const page=await context.newPage();page.on('pageerror',e=>results.errors.push(e.message));
    for(const width of [320,375,390,430,768,1024,1280,1440,1920]) {
     await page.setViewportSize({width,height:1000});
-    await page.goto(url+'#/'+role+'/'+(role==='citizen'?'home':'dashboard'));
+    await gotoDemo(page,url+'#/'+role+'/'+(role==='citizen'?'home':'dashboard'));
     await page.locator('h1').waitFor();await page.evaluate(()=>document.fonts.ready);
     await expect.poll(()=>page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),{timeout:3000}).toBe(true);
     const state=await page.evaluate(()=>({theme:document.documentElement.dataset.theme,font:getComputedStyle(document.querySelector('h1')).fontFamily,fontLoaded:document.fonts.check('14px Montserrat'),overflow:document.documentElement.scrollWidth>innerWidth}));
@@ -54,7 +55,7 @@ try {
    let route=(item[1][0]==='C'?'/citizen':'')+item[3];
    route=route.replace(':reportId','PTG-2026-0103');
    if(route.includes('/teams/'))route=route.replace(':id','team-1');else if(route.includes('/users/'))route=route.replace(':id','citizen-1');else route=route.replace(':id',route.includes('feedback')?'PTG-2026-0108':route.includes('completions/')?'PTG-2026-0107':route.includes('repairs/')||route.includes('progress/')?'PTG-2026-0106':route.includes('assignments/')?'PTG-2026-0104':'PTG-2026-0101');
-   const page=await context.newPage();page.on('pageerror',e=>results.errors.push(e.message));await page.setViewportSize({width,height:1000});await page.goto(url+'#'+route,{waitUntil:'domcontentloaded'});await page.locator('h1,h2').first().waitFor();await page.evaluate(()=>document.fonts.ready);
+   const page=await context.newPage();page.on('pageerror',e=>results.errors.push(e.message));await page.setViewportSize({width,height:1000});await gotoDemo(page,url+'#'+route,{waitUntil:'domcontentloaded'});await page.locator('h1,h2').first().waitFor();await page.evaluate(()=>document.fonts.ready);
    const overflow=await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth);
    const heading=await page.locator('h1').allTextContents();results.routes.push({id:item[1],route,width,theme,overflow,heading});
    if(overflow||heading.some(h=>/page not found|access denied/i.test(h))) {await page.screenshot({path:path.join(out,`failure-${item[1]}-${theme}-${width}.png`),fullPage:true});console.error(JSON.stringify(results.routes.at(-1)));}

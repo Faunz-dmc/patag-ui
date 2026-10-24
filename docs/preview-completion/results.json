@@ -7,21 +7,22 @@
     "Citizen password login and error feedback",
     "New report uses shared agency; photos private by default",
     "LGU approve/hide public photos updates citizen visibility",
-    "New crew receives assigned report after switching accounts",
+    "New crew receives assigned report after password login",
     "48 responsive screen/theme/width checks"
   ],
   "errors": [],
   "crewEvidence": {
     "user": {
-      "id": "86360c24-1b31-4974-ab35-cd73067c3b2a",
+      "id": "26e8c74a-aa2b-4a4e-8632-78dcd1c648fc",
       "active": true,
       "name": "Preview Crew Charlie",
       "email": "charlie@example.test",
       "role": "maintenance",
-      "teamId": "4ec9b332-c479-42e9-8400-d6fcf52fa119"
+      "teamId": "cfef5865-f99e-401d-8284-2a5b085eb94a",
+      "iterations": 600000
     },
     "reportIds": [
-      "PTG-2026-6CB74521"
+      "PTG-2026-077E79BA"
     ]
   }
 }

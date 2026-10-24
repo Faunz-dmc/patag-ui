@@ -56,3 +56,8 @@ dialog{background:var(--surface);color:var(--ink);border:1px solid var(--line);b
 @media(max-width:650px){.detail-grid,.two-columns,.export-layout{grid-template-columns:minmax(0,1fr)}}
 .sidebar.open .nav-label{font-size:11px;letter-spacing:.08em}.summary-metric>span,.summary-lead>span{font-size:13px}.summary-metric small,.summary-lead small{font-size:12px}
 .drawer-close{display:none}@media(max-width:1023px){.sidebar.open .drawer-close{display:inline-flex;position:absolute;top:24px;right:14px}.sidebar.open>a{padding-right:44px}}
+
+/* Authentication keeps the form first on phones; the mascot never overlaps text. */
+.login-story>div{padding:24px 0}.login-story>div img{position:static;display:block;width:160px;margin:24px 0;filter:drop-shadow(1px 0 0 #fff5e6) drop-shadow(-1px 0 0 #fff5e6) drop-shadow(0 1px 0 #fff5e6) drop-shadow(0 -1px 0 #fff5e6)}
+.login-form .demo-access summary{cursor:pointer;min-height:44px;padding:12px 0}.login-form form>.text-button{min-height:44px}
+@media(max-width:767px){.login-story{min-height:104px;padding:20px 24px;display:block}.login-story>div{position:absolute;right:24px;top:14px;padding:0}.login-story>div h1,.login-story>div p,.login-story small{display:none}.login-story>div img{width:72px;margin:0}.login-form{width:calc(100% - 32px);max-width:560px;margin:16px;box-sizing:border-box}}

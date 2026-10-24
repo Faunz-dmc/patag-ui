@@ -2,6 +2,10 @@
 
 Reviewed 24 October 2026 against the supplied **IT 305 - PROJECT 2 (1).pdf**, all three pages, including its image-based technical and UI tables. The source was read from `C:/Users/user/Downloads/IT 305 - PROJECT 2 (1).pdf`. The rendered pages and extracted text in this folder are review evidence.
 
+## Authentication follow-up
+
+See [the current account flow](../auth-flow/README.md): two-step citizen signup, staff login, visible logout, expiring sessions and stricter validation. This remains a local demonstration; email verification and deployed authentication are not claimed.
+
 ## Follow-up: web-preview scope
 
 The user subsequently requested completion for the web preview only, without hosting or an Android device. [The preview follow-up](../preview-completion/README.md) adds citizen account creation/login, team and staff provisioning, shared agency settings, account switching, and public-photo approval. These controls are no longer missing. Deployment and actual device acceptance remain separate; the audit below records the original findings.
