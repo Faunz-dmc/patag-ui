@@ -1,0 +1,19 @@
+{
+  "checks": [
+    "cookie login and dashboard",
+    "no browser auth token storage",
+    "real verification modal payload",
+    "real crew assignment modal payload",
+    "administrative resolution modal payload",
+    "bounded duplicate screen",
+    "authorized audited CSV download",
+    "authorized audited PDF download",
+    "notification read update",
+    "logout"
+  ],
+  "errors": [],
+  "failedApi": [],
+  "demoRequests": [],
+  "backend": "real Node API + isolated PostgreSQL; Supabase Auth/Storage boundary stubs",
+  "hosted": false
+}

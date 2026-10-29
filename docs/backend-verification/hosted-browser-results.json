@@ -1,0 +1,30 @@
+{
+  "status": "passed",
+  "project": "fzivdpjaceoegetsnbta",
+  "hosted": true,
+  "providerStubs": false,
+  "checks": [
+    "live browser Supabase administrator sign-in",
+    "no browser bearer-token persistence",
+    "live route: dashboard",
+    "live route: reports",
+    "live route: verification",
+    "live route: duplicates",
+    "live route: map",
+    "live route: assignments",
+    "live route: teams",
+    "live route: completions",
+    "live route: users",
+    "live route: analytics",
+    "live route: exports",
+    "live route: notifications",
+    "live route: settings",
+    "live route: activity",
+    "live browser logout"
+  ],
+  "checkCount": 17,
+  "errors": [],
+  "failedApi": [],
+  "scope": "Real Supabase sign-in, 14 read-only admin routes and logout. No report/team/account-management mutations or recovery emails.",
+  "credentialsPrinted": false
+}

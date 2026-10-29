@@ -1,3 +1,40 @@
+# Current Supabase admin contract — 27 October 2026
+
+Base: same-site /api, proxied to trusted Node port 4101. The admin rejects the development mock. All state-changing requests require the exact configured Origin, X-Patag-Request: 1 and application/json. Authentication uses HttpOnly cookies with credentials included; no bearer token is returned to browser code. Error shape remains {error:string}; statuses include 400 validation, 401 expired session, 403 access/CSRF, 404 missing scoped record, 405 method, 409 workflow/conflict, 413 size, 415 content type, 429 rate limit and 503 unavailable setup/provider/database.
+
+| Method and path | Behavior |
+| --- | --- |
+| GET /health | Supabase backend identifier and database readiness; no private values. |
+| POST /auth/login | email/password, optional expected portal role; protected profile check; user or mfaRequired/factorId; cookie only. |
+| POST /auth/logout | Revoke local cookie session and Supabase local session. |
+| POST /auth/recovery | Uniform recovery request response; requires hosted email/template setup. |
+| POST /auth/password | password plus exactly one of tokenHash/accessToken; validate Supabase user and live Auth session before the user-authorized update; invalidate local sessions and global Auth logout. |
+| POST /auth/mfa | factorId challenge, or factorId/challengeId/code verification; verified TOTP only. |
+| GET/PATCH /me | Current protected profile; name update only, unchanged email required. |
+| GET /bootstrap | Existing Bootstrap shape, demo:false, statuses, nextOffset; all collections bounded. |
+| GET /reports | Scoped search/filters/sort/pagination; reports and more. |
+| GET /reports/:id | Scoped report detail, before-only photos, completion/update photos, recent history, resolvedAt. |
+| GET /reports/:id/history | limit/offset history page with nextOffset. |
+| POST /reports/:id/events | Exact documented actions and only their fields; optional Idempotency-Key UUID. |
+| GET/POST/PATCH /teams | Scoped teams; create name/municipality/active, update id/name/active; no disabling active crews. |
+| GET/POST/PATCH /users | Admin-only staff/account records, Supabase Auth provisioning, protected role/team/active changes; no self access change. |
+| PATCH /settings | Province-wide admin only; agency/city, province remains Bulacan. |
+| GET /notifications; POST /notifications/read | Current recipient's notices; id or all read update. |
+| GET /statistics | Admin-only counts over all currently authorized reports. |
+| POST /exports | Admin-only ids/fields/format; reauthorized allowlisted report fields and audit before CSV/PDF generation. |
+| GET /activity | Scoped, paginated privileged audit rows. |
+| GET /duplicates | Up to 50 scoped same-municipality candidate pairs {a,b,distance}. |
+| POST /duplicates | {id}; trusted stored coordinates/road determine candidates. |
+| POST /uploads; GET /evidence/:id | Private Supabase object upload and scoped cookie-authorized streaming. |
+
+Query fields: limit (1–100), offset, status, severity, municipality, barangay, teamId, q, from/to ISO dates, sort (newest/oldest/severity). Unsupported values/keys fail validation. Bootstrap adapter combines pages up to 5,000 rows per collection; larger workspaces fail explicitly. Export selection is capped at 1,000. Database roles are administrator/maintenance/citizen; the response maps administrator to the existing UI role admin. Municipality null grants Bulacan-wide administrator scope; protected municipal profiles stay scoped.
+
+There is no admin demo login, citizen self-registration, public map/evidence or automatic data seeding in this real-admin API. Citizen/maintenance applications have not been switched to it. Report intake from those clients is a separate integration; SQL fixtures in tests are synthetic. Report status names remain unchanged; Awaiting Verification remains a completion state. See [setup, security and limits](supabase-backend.md).
+
+# Historical cross-platform demo contract
+
+The contract below remains reference for dev-mock and the unchanged citizen/maintenance demos. Its bearer/sessionStorage, public uploads and demo endpoints do not apply to the real admin.
+
 # Cross-platform JSON contract v1
 
 Base: web `VITE_API_URL=http://127.0.0.1:4100/api`; Android emulator `--dart-define=API_URL=http://10.0.2.2:4100/api`. The Android localhost address points at Android itself. For physical devices use a reachable development endpoint; the service intentionally binds loopback, so prefer `adb reverse tcp:4100 tcp:4100` and API_URL=http://127.0.0.1:4100/api for a USB-connected device. Tokens are memory-only on Android and sessionStorage on web. Restarting the API invalidates all sessions.

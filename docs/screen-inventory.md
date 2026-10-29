@@ -61,3 +61,11 @@ All 55 specified route entries have source implementations. The PDF requires fun
 | M14 | Profile | `/maintenance/profile` | Expanded brief | Browser route opened; core workflows tested |
 
 A10 uses the parameter name `:id` internally for the same report reference. Mobile route arguments are parsed by onGenerateRoute. Splash redirects based on onboarding preference; sessions are intentionally memory-only on Android.
+
+## Admin backend addition, 27 October 2026
+
+| ID | Screen | Route | Scope | Evidence |
+| --- | --- | --- | --- | --- |
+| A22 | Administrator password reset | /admin/reset-password | Existing recovery workflow, Supabase token-hash callback | Build/type check; provider-boundary reset tests. Hosted email/template delivery pending. |
+
+A01 now uses Supabase password Auth with an enrolled-TOTP challenge in the same screen; demo access was removed from the real admin. A02–A21 retain existing route composition and use the Supabase-only adapter. See [backend verification](backend-verification/README.md) for the exact browser coverage; this update does not claim every control/device was exercised.

@@ -1,0 +1,71 @@
+{
+  "status": "passed",
+  "loadedTiles": 12,
+  "attributionVisible": true,
+  "unavailable": [],
+  "providerResponses": [
+    {
+      "path": "/styles/v1/mapbox/streets-v12/tiles/256/13/6845/3753",
+      "status": 200,
+      "referer": "http://127.0.0.1:5173/"
+    },
+    {
+      "path": "/styles/v1/mapbox/streets-v12/tiles/256/13/6845/3754",
+      "status": 200,
+      "referer": "http://127.0.0.1:5173/"
+    },
+    {
+      "path": "/styles/v1/mapbox/streets-v12/tiles/256/13/6843/3754",
+      "status": 200,
+      "referer": "http://127.0.0.1:5173/"
+    },
+    {
+      "path": "/styles/v1/mapbox/streets-v12/tiles/256/13/6846/3755",
+      "status": 200,
+      "referer": "http://127.0.0.1:5173/"
+    },
+    {
+      "path": "/styles/v1/mapbox/streets-v12/tiles/256/13/6843/3755",
+      "status": 200,
+      "referer": "http://127.0.0.1:5173/"
+    },
+    {
+      "path": "/styles/v1/mapbox/streets-v12/tiles/256/13/6846/3754",
+      "status": 200,
+      "referer": "http://127.0.0.1:5173/"
+    },
+    {
+      "path": "/styles/v1/mapbox/streets-v12/tiles/256/13/6844/3754",
+      "status": 200,
+      "referer": "http://127.0.0.1:5173/"
+    },
+    {
+      "path": "/styles/v1/mapbox/streets-v12/tiles/256/13/6846/3753",
+      "status": 200,
+      "referer": "http://127.0.0.1:5173/"
+    },
+    {
+      "path": "/styles/v1/mapbox/streets-v12/tiles/256/13/6843/3753",
+      "status": 200,
+      "referer": "http://127.0.0.1:5173/"
+    },
+    {
+      "path": "/styles/v1/mapbox/streets-v12/tiles/256/13/6844/3753",
+      "status": 200,
+      "referer": "http://127.0.0.1:5173/"
+    },
+    {
+      "path": "/styles/v1/mapbox/streets-v12/tiles/256/13/6844/3755",
+      "status": 200,
+      "referer": "http://127.0.0.1:5173/"
+    },
+    {
+      "path": "/styles/v1/mapbox/streets-v12/tiles/256/13/6845/3755",
+      "status": 200,
+      "referer": "http://127.0.0.1:5173/"
+    }
+  ],
+  "errors": [],
+  "tokenDisplayed": false,
+  "scope": "One live map view using the existing public token; no account/billing/token settings changed."
+}

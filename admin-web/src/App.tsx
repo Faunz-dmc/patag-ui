@@ -70,7 +70,10 @@ import {
 } from "recharts";
 import type { Bootstrap, Report, Photo, User, Team } from "./types";
 import { statuses } from "./types";
-import { request, asset, upload } from "./api";
+import { request, asset, upload, ApiError } from "./api";
+import { validCoordinates, mapSettings } from "./map";
+import { ResetPassword } from "./ResetPassword";
+import { reportDates, resolutionDays } from "./analytics";
 import { role } from "./config";
 import "leaflet/dist/leaflet.css";
 import "./styles/app.css";
@@ -262,27 +265,33 @@ function Login() {
     [recovery, setRecovery] = useState(false),
     [showPassword, setShowPassword] = useState(false),
     [message, setMessage] = useState("");
+  const [mfa, setMfa] = useState<{factorId:string;challengeId:string} | null>(null);
   const run = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const f = new FormData(e.currentTarget);
     setError("");
     setLoading(true);
     try {
-      if (recovery) {
+      if (mfa) {
+        await request("/auth/mfa", {...mfa,code:f.get("code")});
+        nav(base + "/dashboard");
+      } else if (recovery) {
         const r = await request<{ message: string }>("/auth/recovery", {
           email: f.get("email"),
         });
         setMessage(r.message);
       } else {
-        const r = await request<{ token: string; user: User }>("/auth/login", {
+        const r = await request<{ user: User; mfaRequired?: boolean; factorId?: string }>("/auth/login", {
           email: f.get("email"),
           password: f.get("password"),
           role,
         });
         if (r.user.role !== role)
           throw Error("This account belongs to a different portal.");
-        sessionStorage.setItem("patag-token", r.token);
-        nav(base + "/dashboard");
+        if (r.mfaRequired && r.factorId) {
+          const challenge = await request<{id:string}>("/auth/mfa", {factorId:r.factorId});
+          setMfa({factorId:r.factorId,challengeId:challenge.id});
+        } else nav(base + "/dashboard");
       }
     } catch (e) {
       setError((e as Error).message);
@@ -290,18 +299,6 @@ function Login() {
       setLoading(false);
     }
   };
-  async function demo() {
-    setLoading(true);
-    try {
-      const r = await request<{ token: string }>("/auth/demo", { role });
-      sessionStorage.setItem("patag-token", r.token);
-      nav(base + "/dashboard");
-    } catch (e) {
-      setError((e as Error).message);
-    } finally {
-      setLoading(false);
-    }
-  }
   return (
     <main className="login">
       <div className="login-card">
@@ -337,7 +334,7 @@ function Login() {
           <span className="pill-label">
             {admin ? "LGU administrator" : "Road maintenance"}
           </span>
-          <h2>{recovery ? "Recover access" : (admin ? "Welcome to LGU Portal" : "Crew Workspace Sign In")}</h2>
+          <h2>{mfa ? "Verify your sign-in" : recovery ? "Recover access" : (admin ? "Welcome to LGU Portal" : "Crew Workspace Sign In")}</h2>
           <p className="login-subtitle">
             {recovery
               ? "Request a password reset for your staff account."
@@ -346,7 +343,7 @@ function Login() {
                   : "Access assigned road work orders, document repairs, and record evidence.")}
           </p>
           <form onSubmit={run}>
-            <label>
+            {!mfa && <label>
               Email address
               <input
                 name="email"
@@ -355,8 +352,9 @@ function Login() {
                 required
                 placeholder="you@example.test"
               />
-            </label>
-            {!recovery && (
+            </label>}
+            {mfa && <label>Authenticator code<input name="code" inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}" maxLength={6} required autoFocus /></label>}
+            {!recovery && !mfa && (
               <label className="password-label">
                 Password
                 <div className="password-wrap">
@@ -398,27 +396,13 @@ function Login() {
           <button
             className="text-button forgot-btn"
             onClick={() => {
+              setMfa(null);
               setRecovery(!recovery);
               setMessage("");
             }}
           >
             {recovery ? "Back to sign in" : "Forgot password?"}
           </button>
-          <div className="login-divider">
-            <span>or continue with</span>
-          </div>
-          <details className="demo-access" open>
-            <summary>Explore fictional demo data</summary>
-            <strong>Explore the working demo</strong>
-            <p>
-              Fictional reports, local API, and role-based workflows. No official
-              LGU records.
-            </p>
-            <button onClick={demo} disabled={loading} className="demo-action-btn">
-              Continue as {admin ? "LGU administrator" : "Road Crew Alpha"}
-              <ArrowUpRight size={16} />
-            </button>
-          </details>
           <p className="login-footnote">Staff accounts are provided by an authorized administrator. Contact your administrator if you need access.</p>
         </section>
       </div>
@@ -444,7 +428,6 @@ function Shell() {
     try {
       const d = await request<Bootstrap>("/bootstrap");
       if (d.user.role !== role) {
-        sessionStorage.removeItem("patag-token");
         nav(base + "/login");
         return;
       }
@@ -453,17 +436,13 @@ function Shell() {
     } catch (e) {
       const m = (e as Error).message;
       setError(m);
-      if (m.includes("Session expired")) {
-        sessionStorage.removeItem("patag-token");
+      setData(null);
+      if (e instanceof ApiError && (e.status === 401 || e.status === 403)) {
         nav(base + "/login");
       }
     }
   }, [nav]);
   useEffect(() => {
-    if (!sessionStorage.getItem("patag-token")) {
-      nav(base + "/login");
-      return;
-    }
     void refresh();
     const t = setInterval(() => void refresh(), 5000);
     return () => clearInterval(t);
@@ -514,7 +493,7 @@ function Shell() {
     return (
       <main className="loading">
         <Logo />
-        <h1>{error ? "Local API unavailable" : "Opening your workspace…"}</h1>
+        <h1>{error ? "Supabase API unavailable" : "Opening your workspace…"}</h1>
         <p>{error || "Loading your reports and assignments."}</p>
         <button onClick={() => void refresh()}>
           <RefreshCw size={16} /> Retry
@@ -536,7 +515,7 @@ function Shell() {
           <div className="workspace">
             <span className="workspace-avatar">{admin ? "LG" : "RC"}</span>
             <div>
-              <strong>{admin ? data.settings?.agency || "Malolos demo LGU" : data.teams.find(t=>t.id===data.user.teamId)?.name || "Maintenance"}</strong>
+              <strong>{admin ? data.settings?.agency || "Bulacan administrator" : data.teams.find(t=>t.id===data.user.teamId)?.name || "Maintenance"}</strong>
               <small>
                 {admin ? "City engineering office" : "Maintenance workspace"}
               </small>
@@ -586,9 +565,7 @@ function Shell() {
                 className="icon-button"
                 aria-label="Sign out"
                 onClick={async () => {
-                  await request("/auth/logout", {});
-                  sessionStorage.removeItem("patag-token");
-                  nav(base + "/login");
+                  try { await request("/auth/logout", {}); } finally { nav(base + "/login"); }
                 }}
               >
                 <LogOut size={17} />
@@ -706,7 +683,7 @@ function Shell() {
           </main>
           <footer className="footer">
             PATAG <span>Community reports. Coordinated action.</span>
-            <small>Fictional demo data · IT 305</small>
+            <small>PATAG · Bulacan</small>
           </footer>
         </div>
       </div>
@@ -804,27 +781,13 @@ function Chart({
       : kind === "area"
         ? [...new Set(reports.map((r) => r.location.barangay))]
         : kind === "time"
-          ? [
-              "09",
-              "10",
-              "11",
-              "12",
-              "13",
-              "14",
-              "15",
-              "16",
-              "17",
-              "18",
-              "19",
-              "20",
-              "21",
-            ]
+          ? reportDates(reports)
           : statuses;
   const series = groups.map((name) => ({
-    name: kind === "time" ? "Oct " + name : name,
+    name: name,
     total: reports.filter((r) =>
       kind === "time"
-        ? r.createdAt.slice(8, 10) === name
+        ? r.createdAt.slice(0, 10) === name
         : kind === "area"
           ? r.location.barangay === name
           : kind === "severity"
@@ -901,6 +864,8 @@ function ReportMap({
   height?: number;
 }) {
   const [tileError, setTileError] = useState(false);
+  const map = mapSettings(import.meta.env.VITE_MAPBOX_TOKEN);
+  const markers = reports.filter(r => validCoordinates(r.location.coordinates));
   return (
     <div className="map-wrapper" style={{ height }}>
       <MapContainer
@@ -909,12 +874,12 @@ function ReportMap({
         scrollWheelZoom={false}
         style={{ height: "100%", width: "100%" }}
       >
-        <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-          url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
+        {map.url && !tileError && <TileLayer
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://www.mapbox.com/about/maps/">Mapbox</a> <a href="https://apps.mapbox.com/feedback/">Improve this map</a>'
+          url={map.url}
           eventHandlers={{ tileerror: () => setTileError(true) }}
-        />
-        {reports.map((r) => (
+        />}
+        {markers.map((r) => (
           <CircleMarker
             key={r.id}
             center={[r.location.coordinates.lat, r.location.coordinates.lng]}
@@ -944,11 +909,11 @@ function ReportMap({
             </Popup>
           </CircleMarker>
         ))}
-        <Recenter reports={reports} />
+        <Recenter reports={markers} />
       </MapContainer>
-      {tileError && (
+      {(!map.url || tileError) && (
         <span className="tile-error">
-          Map tiles unavailable. Coordinates and report list remain available.
+          {map.message || "Mapbox tiles unavailable. Check the token and URL restrictions. Coordinates and report list remain available."}
         </span>
       )}
     </div>
@@ -964,7 +929,7 @@ function SmallReports({ reports }: { reports: Report[] }) {
           to={base + (admin ? "/reports/" : "/assignments/") + r.id}
         >
           <img
-            src={asset(r.photos[0]?.url || "/demo-evidence.svg")}
+            src={r.photos[0] ? asset(r.photos[0].url) : undefined}
             alt="Report evidence"
           />
           <div>
@@ -1007,7 +972,7 @@ function Dashboard() {
         {admin?<><div className="action-shortcuts"><Link to={base+'/verification'}><span>Verify reports</span><strong>{pending.length}</strong><ArrowRight size={17}/></Link><Link to={base+'/assignments'}><span>Ready for a crew</span><strong>{verified.length}</strong><ArrowRight size={17}/></Link><Link to={base+'/completions'}><span>Approve repairs</span><strong>{awaiting.length}</strong><ArrowRight size={17}/></Link></div><SmallReports reports={pending.slice(0,2)}/></>:next?<div className="next-task"><div className="next-task-heading"><Badge value={next.severity}/><span>{next.id}</span></div><h2>{next.location.road}</h2><p><MapPin size={16}/>Brgy. {next.location.barangay}, {next.location.city}</p><div className="next-task-status"><Badge value={next.status}/><span>Assigned to your crew</span></div><Link className="primary" to={base+'/assignments/'+next.id}>Open task<ArrowUpRight size={17}/></Link></div>:<Empty title="All clear for now" text="Your next assigned repair will appear here."/>}
       </Panel>
       <Panel title={admin?'Road conditions':'Your repair locations'} aside={<Link to={base+'/map'}>Open map<ArrowUpRight size={14}/></Link>} className="overview-map"><ReportMap reports={admin?rs:pending} height={235}/><div className="map-legend"><span><i className="navy-dot"/>Reported</span><span><i className="orange-dot"/>High severity</span><span><i className="green-dot"/>Resolved</span></div></Panel>
-      <Panel title="Reports over time" aside={<span className="muted">October 2026 · demo</span>} className="overview-trend"><Chart reports={rs} kind="time"/></Panel>
+      <Panel title="Reports over time" aside={<span className="muted">Authorized reports</span>} className="overview-trend"><Chart reports={rs} kind="time"/></Panel>
       <Panel title={admin?'Priority roads':'Up next'} aside={<Link to={base+(admin?'/reports?severity=High':'/assignments')}>View all<ArrowUpRight size={14}/></Link>} className="overview-priority"><SmallReports reports={(admin?high:pending.filter(r=>r.id!==next?.id)).slice(0,2)}/></Panel>
     </div>
     <section className="road-progress"><div><h2>From a tag to a better road</h2><p>Every stage, accounted for.</p></div><div className="progress-stages">{['Submitted','Under Review','Verified','Assigned','In Progress','Resolved'].map(s=><Link key={s} to={base+(admin?'/reports?status='+encodeURIComponent(s):'/assignments')}><strong>{rs.filter(r=>r.status===s).length}</strong><span>{s}</span></Link>)}</div></section>
@@ -1203,7 +1168,7 @@ function ReportList({ mode }: { mode: string }) {
           <h2>
             {rows.length} matching {admin ? "reports" : "tasks"}
           </h2>
-          <span className="muted">Live local demo</span>
+          <span className="muted">Supabase workspace</span>
         </div>
         {rows.length ? (
           <>
@@ -1341,7 +1306,7 @@ function Details({ mode = "detail" }: { mode?: string }) {
     [nearby, setNearby] = useState<{ report: Report; distance: number }[]>([]);
   useEffect(() => {
     if (r)
-      void request<{ report: Report; distance: number }[]>("/duplicates", r)
+      void request<{ report: Report; distance: number }[]>("/duplicates", {id:r.id})
         .then(setNearby)
         .catch(() => setNearby([]));
   }, [r]);
@@ -1359,14 +1324,7 @@ function Details({ mode = "detail" }: { mode?: string }) {
     setError("");
     const f = new FormData(e.currentTarget);
     try {
-      await event(r.id, decision, {
-        note: f.get("note"),
-        teamId: f.get("teamId"),
-        priority: f.get("priority"),
-        targetDate: f.get("targetDate"),
-        duplicateOf: f.get("duplicateOf"),
-        jurisdiction: f.get("jurisdiction"),
-      });
+      await event(r.id, decision, Object.fromEntries(f.entries()));
       setDecision("");
     } catch (e) {
       setError((e as Error).message);
@@ -1975,7 +1933,7 @@ function MapPage() {
     <>
       <Header
         title={admin ? "Pothole map" : "Assigned task map"}
-        description={`${rs.length} reports on the map · Malolos, Bulacan · fictional demonstration locations`}
+        description={`${rs.length} reports on the map · Bulacan · authorized report locations`}
       />
       <div className="filters">
         <select
@@ -2035,23 +1993,17 @@ function MapPage() {
 }
 function Duplicates() {
   const { data } = useData();
+  const [pairsError,setPairsError]=useState("");
   const [pairs, setPairs] = useState<
     { a: Report; b: Report; distance: number }[]
   >([]);
   useEffect(() => {
-    void Promise.all(
-      data.reports
-        .filter((r) => ["Submitted", "Under Review"].includes(r.status))
-        .map(async (a) => {
-          const list = await request<{ report: Report; distance: number }[]>(
-            "/duplicates",
-            a,
-          );
-          return list.map((x) => ({ a, b: x.report, distance: x.distance }));
-        }),
-    )
-      .then((x) => setPairs(x.flat()))
-      .catch(() => setPairs([]));
+    void request<{a:string;b:string;distance:number}[]>("/duplicates?limit=50")
+      .then(list => {setPairsError("");setPairs(list.flatMap(pair => {
+        const a=data.reports.find(r=>r.id===pair.a),b=data.reports.find(r=>r.id===pair.b);
+        return a&&b?[{a,b,distance:pair.distance}]:[];
+      }));})
+      .catch(error=>setPairsError((error as Error).message));
   }, [data.reports]);
   return (
     <>
@@ -2059,6 +2011,8 @@ function Duplicates() {
         title="Possible duplicates"
         description="Same road, within 150 metres. Compare evidence before confirming a duplicate."
       />
+      <p>Showing up to 50 authorized candidate pairs. Suggestions require administrative confirmation.</p>
+      {pairsError && <p role="alert" className="error">{pairsError}</p>}
       {pairs.length ? (
         pairs.map(({ a, b, distance }) => (
           <section className="panel duplicate-pair" key={a.id + b.id}>
@@ -2172,8 +2126,9 @@ function Teams() {
           ))}
       </div>
       {editing && <Modal title={editing.id ? "Edit maintenance team" : "Add maintenance team"} close={() => setEditing(null)}>
-        <form onSubmit={async(e) => {e.preventDefault();const f=new FormData(e.currentTarget);try{await request("/teams",{id:editing.id,name:f.get("name"),active:f.get("active")==="true"},editing.id?"PATCH":"POST");await refresh();setEditing(null);notify("Team saved.");}catch(e){setError((e as Error).message);}}}>
+        <form onSubmit={async(e) => {e.preventDefault();const f=new FormData(e.currentTarget);try{await request("/teams",{...(editing.id?{id:editing.id}:{municipality:f.get("municipality")}),name:f.get("name"),active:f.get("active")==="true"},editing.id?"PATCH":"POST");await refresh();setEditing(null);notify("Team saved.");}catch(e){setError((e as Error).message);}}}>
           <label>Team name<input name="name" defaultValue={editing.name} required maxLength={100}/></label>
+          {!editing.id && <label>Municipality / city<input name="municipality" required maxLength={100} placeholder="e.g. Malolos or Baliwag"/></label>}
           <label>Availability<select name="active" defaultValue={String(editing.active)}><option value="true">Active</option><option value="false">Inactive</option></select></label>
           <p>Members are linked through User accounts. Finish open tasks and move active members before deactivating a team.</p>
           {error && <p className="error" role="alert">{error}</p>}
@@ -2277,8 +2232,7 @@ function UsersPage() {
                 await request(
                   "/users",
                   {
-                    id: selected.id,
-                    name: f.get("name"), email:f.get("email"),password:f.get("password"),teamId:f.get("teamId"),
+                    ...(selected.id ? {id:selected.id} : {name:f.get("name"),email:f.get("email"),password:f.get("password")}),teamId:f.get("teamId"),
                     role: f.get("role"),
                     active: f.get("active") === "true",
                   },
@@ -2295,8 +2249,8 @@ function UsersPage() {
             {!selected.id && <>
               <label>Full name<input name="name" required autoComplete="name"/></label>
               <label>Email address<input name="email" type="email" required autoComplete="off"/></label>
-              <label>Temporary demo password<input name="password" type="password" minLength={15} maxLength={128} required autoComplete="new-password"/></label>
-              <p>Use fictional details and a demo-only password.</p>
+              <label>Initial account password<input name="password" type="password" minLength={15} maxLength={128} required autoComplete="new-password"/></label>
+              <p>Provide account details and share the initial password privately.</p>
             </>}
             <label>Maintenance team<select name="teamId" aria-label="Maintenance team" defaultValue={selected.teamId || ""}><option value="">Not assigned (non-maintenance roles)</option>{data.teams.filter(t=>t.active).map(t=><option key={t.id} value={t.id}>{t.name}</option>)}</select></label>
             <label>
@@ -2339,7 +2293,7 @@ function Analytics() {
         done.reduce(
           (sum, r) =>
             sum +
-            (Date.parse(r.updatedAt) - Date.parse(r.createdAt)) / 86400000,
+            resolutionDays(r),
           0,
         ) / done.length,
       )
@@ -2348,7 +2302,7 @@ function Analytics() {
     <>
       <Header
         title="Community reports, in perspective."
-        description="Derived from fictional local records · no official repair statistics."
+        description="Derived from reports in your authorized Supabase workspace."
         action={
           <Link className="button" to={base + "/exports"}>
             Export summary
@@ -2401,7 +2355,7 @@ function Analytics() {
             </strong>
           </div>
           <div className="breakdown">
-            <span>Mean elapsed time (demo timestamps)</span>
+            <span>Mean elapsed time</span>
             <strong>{avg === null ? "—" : avg + " days"}</strong>
           </div>
         </Panel>
@@ -2409,6 +2363,7 @@ function Analytics() {
     </>
   );
 }
+type ExportRow = Pick<Report, 'id' | 'severity' | 'status' | 'createdAt'> & {location:Pick<Report['location'], 'road' | 'barangay'>};
 function Exports() {
   const { data, notify } = useData();
   const [status, setStatus] = useState("All"),
@@ -2433,7 +2388,7 @@ function Exports() {
       (!from || r.createdAt.slice(0, 10) >= from) &&
       (!to || r.createdAt.slice(0, 10) <= to),
   );
-  function value(r: Report, f: string) {
+  function value(r: ExportRow, f: string) {
     return (
       {
         Reference: r.id,
@@ -2450,12 +2405,14 @@ function Exports() {
       if (!fields.length) throw Error("Select at least one report field.");
       if (from && to && from > to)
         throw Error("The end date must be after the start date.");
+      const exported = await request<{reports:ExportRow[]}>("/exports", {ids:rs.map(r=>r.id),fields,format:kind});
+      const authorized = exported.reports;
       if (kind === "CSV") {
         const quote = (v: string) =>
-          '"' + (/^[=+@\-]/.test(v) ? "'" + v : v).replaceAll('"', '""') + '"';
+          '"' + (/^\s*[=+@-]/.test(v) ? "'" + v : v).replaceAll('"', '""') + '"';
         const csv =
           "\uFEFF" +
-          [fields, ...rs.map((r) => fields.map((f) => value(r, f)))]
+          [fields, ...authorized.map((r) => fields.map((f) => value(r, f)))]
             .map((row) => row.map(quote).join(","))
             .join("\r\n");
         const url = URL.createObjectURL(
@@ -2474,7 +2431,7 @@ function Exports() {
         pdf.text("PATAG | Road report summary", 16, 20);
         pdf.setFontSize(10);
         pdf.text(
-          "FICTIONAL DEMONSTRATION DATA - " + rs.length + " reports",
+          "Authorized report export - " + authorized.length + " reports",
           16,
           29,
         );
@@ -2487,7 +2444,7 @@ function Exports() {
           y += 10;
         };
         head();
-        rs.forEach((r) => {
+        authorized.forEach((r) => {
           const cells = fields.map((f) =>
             pdf.splitTextToSize(value(r, f), col - 5),
           );
@@ -2596,7 +2553,7 @@ function Exports() {
           <Download size={32} />
           <h3>{rs.length} reports selected</h3>
           <p>
-            Downloads include a demonstration label. Reporter personal
+            Downloads contain authorized report fields. Reporter personal
             information is excluded.
           </p>
           {error && (
@@ -2625,7 +2582,7 @@ function Notifications() {
     <>
       <Header
         title="Notifications"
-        description="Report and repair updates from the local demonstration service."
+        description="Report and repair updates for your authorized account."
         action={
           <button
             onClick={async () => {
@@ -2686,7 +2643,7 @@ function Activity() {
     <>
       <Header
         title="Report history"
-        description="Local demonstration history. This is not a tamper-proof production audit log."
+        description="Report workflow history. Privileged API actions are also recorded in the protected audit log."
       />
       <label className="search">
         <Search size={16} />
@@ -2747,10 +2704,10 @@ function SettingsPage() {
     <>
       <Header
         title={admin ? "Workspace settings" : "Profile & settings"}
-        description="Profile and preferences for this demonstration workspace."
+        description="Profile and preferences for your account."
       />
 
-      <button className="button" onClick={async()=>{try{await request('/auth/logout',{});}finally{sessionStorage.removeItem('patag-token');navigate(base+'/login',{replace:true});}}}>Log out</button>
+      <button className="button" onClick={async()=>{try{await request('/auth/logout',{});}finally{navigate(base+'/login',{replace:true});}}}>Log out</button>
       <section className="settings-row">
         <div>
           <h2>Your profile</h2>
@@ -2850,7 +2807,7 @@ function SettingsPage() {
               <input
                 name="agency"
                 defaultValue={
-                  data.settings?.agency || "Malolos demo jurisdiction"
+                  data.settings?.agency || "Bulacan-wide administrator scope"
                 }
                 required
               />
@@ -2882,7 +2839,7 @@ function SettingsPage() {
             Academic final project · Local development API
           </p>
           <p className="muted">
-            Never use real personal data in this demonstration.
+            Only enter personal data needed for authorized PATAG work.
           </p>
         </div>
       </section>
@@ -2917,6 +2874,7 @@ export default function App() {
     <BrowserRouter>
       <Routes>
         <Route path={base + "/login"} element={<Login />} />
+        <Route path={base + "/reset-password"} element={<ResetPassword />} />
         <Route path={base + "/*"} element={<Shell />} />
         <Route
           path="*"

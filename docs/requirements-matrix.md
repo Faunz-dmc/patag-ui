@@ -24,3 +24,7 @@ Authoritative source: `references/IT 305 - PROJECT 2 (1).pdf`, all three pages i
 | FR-18 | Report export | Admin selection of date/status/severity/area/fields; escaped CSV and paginated jsPDF. | Browser export blobs validated; sandbox cancels native download file writes |
 
 Updated 24 October: Flutter analysis, 26 tests and the debug APK now pass. Actual Android permission/camera/GPS acceptance and deployed backend/security remain outstanding. The current detailed assessment supersedes stale native-unverified labels above: see [PDF requirements and UX audit](project2-audit/audit.md). Source coverage is not acceptance-test coverage.
+
+## Real admin backend follow-up, 27 October 2026
+
+FR-01 and FR-08–FR-16/FR-18 now have a local Supabase-only backend implementation with protected profile authorization, RLS transactions, private evidence metadata/streaming, audited exports and cookie sessions. These are locally tested implementation claims, not hosted Supabase or production acceptance. FR-02–FR-06/FR-17 citizen integration and the independent maintenance portal remain outside this web-admin backend switch. See [current evidence and limits](backend-verification/README.md).

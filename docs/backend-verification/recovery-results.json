@@ -1,0 +1,11 @@
+{
+  "checks": [
+    "both callback formats submit through real local API and clear secrets from URL/storage",
+    "missing, provider-expired and wrong-flow callbacks show safe errors",
+    "Auth rejection cannot update password",
+    "revoked Auth session cannot update password"
+  ],
+  "errors": [],
+  "hosted": false,
+  "backend": "real Node API + isolated PostgreSQL; synthetic Supabase Auth boundary"
+}

@@ -20,3 +20,8 @@ browser-preview/.build/
 
 .playwright-mcp/
 docs/qa-downloads/
+
+.npm-cache/
+backend/.env.local
+
+backend/.browser-temp/

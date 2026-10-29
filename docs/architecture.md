@@ -1,3 +1,9 @@
+# Current admin backend — 27 October 2026
+
+The real admin-web uses the Supabase-only Node BFF on 4101, with cookie sessions, protected PostgreSQL profiles, scoped RLS transactions and private evidence Storage. See [setup and boundaries](supabase-backend.md) and [ADR-0001](decisions/0001-supabase-admin.md). The existing admin views still consume their HTTP contract; no source is imported from another checkout. Authorized hosted migration, administrator bootstrap, real sign-in/API/logout and read-only browser routes have passed; see [hosted acceptance](backend-verification/hosted-acceptance-2026-10-27.md). Full hosted workflows remain unverified.
+
+The following earlier architecture describes the separate demo, maintenance and citizen clients. Its mock-session/persistence and OSM claims do not describe the real admin's current backend or Mapbox configuration.
+
 # Architecture
 
 Three independent applications: Flutter/Dart citizen Android, Vite/React/TypeScript LGU portal on port 5173, and a separate Vite/React/TypeScript maintenance portal on 5174. Each web app owns its package manifest, node_modules, entry point, router, types, API adapter, assets and build. No web app imports another app's source; there is no React citizen view. Matching web patterns are duplicated locally for independent deployment. Shared changes must be applied to both copies and validated together.

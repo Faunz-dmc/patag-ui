@@ -1,3 +1,7 @@
+> **Later hosted acceptance:** The user subsequently authorized hosted setup. Migration, admin bootstrap, real sign-in/API/logout and browser route checks passed. See [the hosted record](backend-verification/hosted-acceptance-2026-10-27.md). The earlier records below preserve the pre-authorization state.
+
+> **Current consumer — 27 October 2026:** backend/ now explicitly loads the existing root public metadata plus a separate ignored backend/.env.local for private credentials. See [the current setup guide](supabase-backend.md). The 25 October connection-only handoff below is retained as dated evidence; statements that no backend consumes configuration are historical. No hosted resource was mutated by the backend implementation task.
+
 # Supabase connection handoff
 
 Connection configuration only, checked on 2026-10-25 (Asia/Manila).

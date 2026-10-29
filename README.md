@@ -1,3 +1,5 @@
+> **Admin backend update — 27 October 2026:** The real admin-web now requires the Supabase-only Node API on port 4101. Use [the current setup guide](docs/supabase-backend.md) and [verification record](docs/backend-verification/README.md). Hosted migration and test-admin creation are complete after explicit authorization; see [live acceptance evidence](docs/backend-verification/hosted-acceptance-2026-10-27.md). Demo/preview instructions below describe separate reference clients; the real admin has no demo login or fallback.
+
 # PATAG
 
 Pa-tag lubak, lubak patag.
@@ -49,7 +51,7 @@ npm install
 npm run dev
 ```
 
-Open http://127.0.0.1:5173/admin/login and choose **Continue as LGU administrator**.
+For the real admin, first configure/start `npm run dev:api` using [Supabase setup](docs/supabase-backend.md), then open http://127.0.0.1:5173/admin/login and sign in with the provisioned account. The demo service on 4100 cannot authenticate the real admin.
 
 Maintenance tab:
 
@@ -93,7 +95,7 @@ The API/browser part of this flow was exercised automatically. The Flutter devic
 npm --prefix admin-web run build
 npm --prefix maintenance-web run build
 npm run test:api
-node admin-web/tests/browser-qa.mjs
+npm run test:browser
 cd citizen-mobile
 flutter analyze
 flutter test
@@ -101,7 +103,7 @@ flutter test integration_test/app_test.dart -d <device-id>
 flutter build apk --debug --dart-define=API_URL=http://10.0.2.2:4100/api
 ```
 
-Stop retained servers before browser-qa: the script starts an isolated API and serves both built `dist` directories on the usual ports. Requires installed Google Chrome. It writes reports/screenshots in docs. Native browser download saving is canceled by this sandbox; the test validates and saves the generated CSV/PDF blobs instead. Build warnings identify a large initial web bundle; lazy jsPDF loading reduces initial cost, with further route splitting left for optimization.
+The current `npm run test:browser` check uses an isolated API/PostgreSQL fixture and an ephemeral web port, so the running admin and backend can stay open. It requires installed Google Chrome and writes screenshots/results in docs/backend-verification. Auth/Storage are provider-boundary stubs in this local runner; separate hosted acceptance is recorded in docs/backend-verification/hosted-acceptance-2026-10-27.md. The older cross-portal browser-qa.mjs runner is historical demo coverage and cannot test the current Supabase-only admin. The existing large-bundle build warning remains.
 
 ## Documentation and limitations
 

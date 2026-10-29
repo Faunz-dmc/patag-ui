@@ -39,6 +39,7 @@ export interface Report {
   status: Status;
   createdAt: string;
   updatedAt: string;
+  resolvedAt?: string | null;
   location: {
     road: string;
     barangay: string;

@@ -12,6 +12,20 @@
     "test:preview": "node scripts/qa/preview-workflow.mjs",
     "test:preview-completion": "node scripts/qa/preview-completion.mjs",
     "test:preview-routes": "node scripts/qa/preview-routes.mjs",
-    "test:visual-system": "node scripts/qa/visual-system.mjs"
+    "test:visual-system": "node scripts/qa/visual-system.mjs",
+    "dev:api": "node --env-file-if-exists=.env.local --env-file-if-exists=backend/.env.local backend/server.mjs",
+    "db:migrate": "node --env-file-if-exists=.env.local --env-file-if-exists=backend/.env.local backend/migrate.mjs",
+    "seed:admin": "node --env-file-if-exists=.env.local --env-file-if-exists=backend/.env.local backend/seed-admin.mjs",
+    "test": "node --test backend/tests/*.test.mjs admin-web/tests/*.test.mjs",
+    "build": "npm --prefix admin-web run build",
+    "lint": "npm --prefix admin-web run lint",
+    "test:backend": "node --test backend/tests/*.test.mjs",
+    "test:browser": "node admin-web/tests/supabase-browser.mjs"
+  },
+  "dependencies": {
+    "pg": "^8.23.1"
+  },
+  "devDependencies": {
+    "@electric-sql/pglite": "^0.5.12"
   }
 }
