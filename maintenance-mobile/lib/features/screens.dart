@@ -234,9 +234,49 @@ class _MaintenanceLoginState extends State<MaintenanceLogin> {
             child: ListView(
               padding: EdgeInsets.zero,
               children: [
+                // Top Utilities Bar (Language & Theme)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 10, 16, 4),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      const LanguageSwitcher(compact: true),
+                      const SizedBox(width: 8),
+                      InkWell(
+                        borderRadius: BorderRadius.circular(999),
+                        onTap: () => themeController.toggle(theme.brightness),
+                        child: Container(
+                          width: 36,
+                          height: 36,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: dark
+                                ? const Color(0xFF1B1F27)
+                                : const Color(0xFFF1F5F9),
+                            border: Border.all(
+                              color: dark
+                                  ? const Color(0xFF2D3341)
+                                  : const Color(0xFFCBD5E1),
+                              width: 1,
+                            ),
+                          ),
+                          child: Icon(
+                            dark
+                                ? Icons.dark_mode_rounded
+                                : Icons.light_mode_rounded,
+                            size: 18,
+                            color: dark
+                                ? const Color(0xFFFFAA76)
+                                : const Color(0xFF475569),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
                 // Top Inset Orange Card (replicated from Citizen Mobile App)
                 Container(
-                  margin: const EdgeInsets.fromLTRB(14, 14, 14, 0),
+                  margin: const EdgeInsets.fromLTRB(14, 6, 14, 0),
                   padding: const EdgeInsets.fromLTRB(22, 26, 22, 22),
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(20),
@@ -291,72 +331,39 @@ class _MaintenanceLoginState extends State<MaintenanceLogin> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Badge & Theme Switcher
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Flexible(
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 9,
-                                vertical: 4,
-                              ),
-                              decoration: BoxDecoration(
-                                color: dark
-                                    ? const Color(0x26FF5D1A)
-                                    : const Color(0xFFFFF7ED),
-                                borderRadius: BorderRadius.circular(999),
-                                border: Border.all(
-                                  color: dark
-                                      ? const Color(0x4DFF5D1A)
-                                      : const Color(0xFFFFEDD5),
-                                ),
-                              ),
-                              child: Text(
-                                l.loginBadge,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: TextStyle(
-                                  fontSize: 10.5,
-                                  fontWeight: FontWeight.w700,
-                                  letterSpacing: 0.5,
-                                  color: dark
-                                      ? const Color(0xFFFFAA91)
-                                      : const Color(0xFFC2410C),
-                                ),
-                              ),
-                            ),
+                      // Badge
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 5,
                           ),
-                          const SizedBox(width: 8),
-                          const LanguageSwitcher(compact: true),
-                          const SizedBox(width: 8),
-                          InkWell(
+                          decoration: BoxDecoration(
+                            color: dark
+                                ? const Color(0x26FF5D1A)
+                                : const Color(0xFFFFF7ED),
                             borderRadius: BorderRadius.circular(999),
-                            onTap: () =>
-                                themeController.toggle(theme.brightness),
-                            child: Container(
-                              width: 36,
-                              height: 36,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: dark
-                                    ? const Color(0xFF1E222B)
-                                    : const Color(0xFFF1F5F9),
-                              ),
-                              child: Icon(
-                                dark
-                                    ? Icons.nightlight_round
-                                    : Icons.light_mode_outlined,
-                                size: 18,
-                                color: dark
-                                    ? Colors.white70
-                                    : const Color(0xFF334155),
-                              ),
+                            border: Border.all(
+                              color: dark
+                                  ? const Color(0x4DFF5D1A)
+                                  : const Color(0xFFFFEDD5),
                             ),
                           ),
-                        ],
+                          child: Text(
+                            l.loginBadge,
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: 0.5,
+                              color: dark
+                                  ? const Color(0xFFFFAA91)
+                                  : const Color(0xFFC2410C),
+                            ),
+                          ),
+                        ),
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 14),
                       Text(
                         l.loginWelcome,
                         style: TextStyle(
@@ -2073,20 +2080,24 @@ class ProfileTab extends StatelessWidget {
                 gap(12),
                 Text(
                   user?.name ?? l.profileFallbackName,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.w700,
+                    color: dark ? Colors.white : ink,
                   ),
                 ),
                 gap(4),
                 Text(
                   team?.name ?? 'Road Maintenance Alpha',
-                  style: const TextStyle(color: slate, fontSize: 14),
+                  style: TextStyle(
+                    color: dark ? const Color(0xFF94A3B8) : slate,
+                    fontSize: 14,
+                  ),
                 ),
               ],
             ),
           ),
-          gap(28),
+          gap(24),
           ListTile(
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16),
@@ -2094,10 +2105,19 @@ class ProfileTab extends StatelessWidget {
             tileColor: dark ? const Color(0xFF22242A) : quiet,
             leading:
                 Icon(dark ? Icons.light_mode : Icons.dark_mode, color: orange),
-            title: Text(l.themeMode),
+            title: Text(
+              l.themeMode,
+              style: TextStyle(
+                color: dark ? Colors.white : ink,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
             trailing: Text(
               dark ? l.themeDark : l.themeLight,
-              style: const TextStyle(fontWeight: FontWeight.w600),
+              style: TextStyle(
+                fontWeight: FontWeight.w600,
+                color: dark ? Colors.white : ink,
+              ),
             ),
             onTap: () => themeController.toggle(theme.brightness),
           ),
@@ -2111,7 +2131,13 @@ class ProfileTab extends StatelessWidget {
               Icons.notifications_active_outlined,
               color: orange,
             ),
-            title: Text(l.unreadIndicators),
+            title: Text(
+              l.unreadIndicators,
+              style: TextStyle(
+                color: dark ? Colors.white : ink,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
             value: store.showUnread,
             onChanged: (val) {
               store.setUnreadPreference(val);
@@ -2120,7 +2146,7 @@ class ProfileTab extends StatelessWidget {
           gap(12),
           Container(
             key: const ValueKey('language-setting'),
-            padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
             decoration: BoxDecoration(
               color: dark ? const Color(0xFF22242A) : quiet,
               borderRadius: BorderRadius.circular(16),
@@ -2139,19 +2165,23 @@ class ProfileTab extends StatelessWidget {
                           Text(
                             l.languageSettingTitle,
                             style: theme.textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.w400,
+                              fontWeight: FontWeight.w600,
+                              color: dark ? Colors.white : ink,
                             ),
                           ),
+                          const SizedBox(height: 2),
                           Text(
                             l.languageSettingSubtitle,
-                            style: theme.textTheme.bodySmall,
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: dark ? const Color(0xFF94A3B8) : slate,
+                            ),
                           ),
                         ],
                       ),
                     ),
                   ],
                 ),
-                gap(12),
+                gap(14),
                 const LanguageSwitcher(),
               ],
             ),
@@ -2163,8 +2193,19 @@ class ProfileTab extends StatelessWidget {
             ),
             tileColor: dark ? const Color(0xFF22242A) : quiet,
             leading: const Icon(Icons.info_outline_rounded, color: orange),
-            title: Text(l.aboutTitle),
-            subtitle: Text(l.aboutSubtitle),
+            title: Text(
+              l.aboutTitle,
+              style: TextStyle(
+                color: dark ? Colors.white : ink,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            subtitle: Text(
+              l.aboutSubtitle,
+              style: TextStyle(
+                color: dark ? const Color(0xFF94A3B8) : slate,
+              ),
+            ),
           ),
           gap(28),
           OutlinedButton.icon(

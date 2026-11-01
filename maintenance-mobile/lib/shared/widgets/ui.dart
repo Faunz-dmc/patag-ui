@@ -897,23 +897,73 @@ class LanguageSwitcher extends StatelessWidget {
 
   Widget _segmented(BuildContext context) {
     final l = context.l10n;
-    return SizedBox(
+    final dark = Theme.of(context).brightness == Brightness.dark;
+    final selectedCode = localeController.locale.languageCode;
+    
+    Widget buildOption(Locale locale, String label) {
+      final isSelected = selectedCode == locale.languageCode;
+      return Expanded(
+        child: Semantics(
+          button: true,
+          selected: isSelected,
+          child: InkWell(
+            borderRadius: BorderRadius.circular(12),
+            onTap: () => localeController.setLocale(locale),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 180),
+              padding: const EdgeInsets.symmetric(vertical: 10),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(12),
+                color: isSelected
+                    ? orange
+                    : Colors.transparent,
+                boxShadow: isSelected
+                    ? [
+                        BoxShadow(
+                          color: orange.withOpacity(0.3),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        )
+                      ]
+                    : null,
+              ),
+              child: Center(
+                child: Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
+                    color: isSelected
+                        ? Colors.white
+                        : dark
+                            ? const Color(0xFFCBD5E1)
+                            : const Color(0xFF475569),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
+    return Container(
       width: double.infinity,
-      child: SegmentedButton<String>(
-        showSelectedIcon: false,
-        segments: [
-          ButtonSegment(
-            value: LocaleController.tagalog.languageCode,
-            label: Text(l.languageTagalog),
-          ),
-          ButtonSegment(
-            value: LocaleController.english.languageCode,
-            label: Text(l.languageEnglish),
-          ),
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: dark ? const Color(0xFF16181F) : const Color(0xFFE2E8F0),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: dark ? const Color(0xFF2A303C) : const Color(0xFFCBD5E1),
+          width: 1,
+        ),
+      ),
+      child: Row(
+        children: [
+          buildOption(LocaleController.tagalog, l.languageTagalog),
+          const SizedBox(width: 4),
+          buildOption(LocaleController.english, l.languageEnglish),
         ],
-        selected: {localeController.locale.languageCode},
-        onSelectionChanged: (value) =>
-            localeController.setLocale(Locale(value.first)),
       ),
     );
   }
@@ -930,22 +980,32 @@ class LanguageSwitcher extends StatelessWidget {
         child: InkWell(
           borderRadius: BorderRadius.circular(999),
           onTap: () => localeController.setLocale(locale),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 150),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
             decoration: BoxDecoration(
               color: selected ? orange : Colors.transparent,
               borderRadius: BorderRadius.circular(999),
+              boxShadow: selected
+                  ? [
+                      BoxShadow(
+                        color: orange.withOpacity(0.35),
+                        blurRadius: 6,
+                        offset: const Offset(0, 1),
+                      )
+                    ]
+                  : null,
             ),
             child: Text(
               label,
               style: TextStyle(
                 fontSize: 11,
-                fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
                 color: selected
                     ? Colors.white
                     : dark
-                        ? Colors.white70
-                        : const Color(0xFF334155),
+                        ? const Color(0xFFCBD5E1)
+                        : const Color(0xFF475569),
               ),
             ),
           ),
@@ -956,19 +1016,28 @@ class LanguageSwitcher extends StatelessWidget {
     return Tooltip(
       message: l.languageSettingTitle,
       child: Container(
-        padding: const EdgeInsets.all(2),
+        padding: const EdgeInsets.all(3),
         decoration: BoxDecoration(
-          color: dark ? const Color(0xFF1E222B) : const Color(0xFFF1F5F9),
+          color: dark ? const Color(0xFF1B1F27) : const Color(0xFFF1F5F9),
           borderRadius: BorderRadius.circular(999),
+          border: Border.all(
+            color: dark ? const Color(0xFF2D3341) : const Color(0xFFCBD5E1),
+            width: 1,
+          ),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Padding(
-              padding: EdgeInsets.only(left: 6, right: 2),
-              child: Icon(Icons.translate_rounded, size: 14, color: slate),
+            Padding(
+              padding: const EdgeInsets.only(left: 6, right: 3),
+              child: Icon(
+                Icons.translate_rounded,
+                size: 14,
+                color: dark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+              ),
             ),
             option(LocaleController.tagalog, l.languageTagalog),
+            const SizedBox(width: 2),
             option(LocaleController.english, l.languageEnglish),
           ],
         ),
