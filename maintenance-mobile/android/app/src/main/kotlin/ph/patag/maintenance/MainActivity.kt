@@ -1,4 +1,4 @@
-package ph.patag.citizen
+package ph.patag.maintenance
 
 import io.flutter.embedding.android.FlutterActivity
 

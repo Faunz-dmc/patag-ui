@@ -532,28 +532,45 @@ class EmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 36),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            mascot(width: 90),
-            gap(20),
-            heading(context, title),
-            gap(8),
-            Text(
-              subtitle,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 13,
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-                height: 1.5,
+    // Scrollable so it never overflows on short screens, and so a parent
+    // RefreshIndicator still gets pull-to-refresh when the list is empty.
+    // Inside an already-scrolling parent (unbounded height) it lays out as is.
+    return LayoutBuilder(
+      builder: (context, constraints) => !constraints.hasBoundedHeight
+          ? Center(child: _content(context))
+          : SingleChildScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              child: ConstrainedBox(
+                constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                child: Center(child: _content(context)),
               ),
             ),
-            if (action != null) ...[gap(20), action!],
-          ],
-        ),
+    );
+  }
+
+  Widget _content(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 36),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          mascot(width: 90),
+          gap(20),
+          Text(title,
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.headlineMedium),
+          gap(8),
+          Text(
+            subtitle,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 13,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+              height: 1.5,
+            ),
+          ),
+          if (action != null) ...[gap(20), action!],
+        ],
       ),
     );
   }
@@ -899,7 +916,7 @@ class LanguageSwitcher extends StatelessWidget {
     final l = context.l10n;
     final dark = Theme.of(context).brightness == Brightness.dark;
     final selectedCode = localeController.locale.languageCode;
-    
+
     Widget buildOption(Locale locale, String label) {
       final isSelected = selectedCode == locale.languageCode;
       return Expanded(
@@ -914,9 +931,7 @@ class LanguageSwitcher extends StatelessWidget {
               padding: const EdgeInsets.symmetric(vertical: 10),
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(12),
-                color: isSelected
-                    ? orange
-                    : Colors.transparent,
+                color: isSelected ? orange : Colors.transparent,
                 boxShadow: isSelected
                     ? [
                         BoxShadow(
