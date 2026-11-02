@@ -32,7 +32,7 @@ export class SupabaseBlobStore implements BlobStore {
   async ensureBucket() {
     const res = await fetch(`${this.base}/bucket`, {
       method: 'POST', headers: this.headers({ 'Content-Type': 'application/json' }),
-      body: JSON.stringify({ id: this.bucket, name: this.bucket, public: false, file_size_limit: 8 * 1024 * 1024, allowed_mime_types: ['image/png', 'image/jpeg', 'image/webp'] }),
+      body: JSON.stringify({ id: this.bucket, name: this.bucket, public: false, file_size_limit: 3.5 * 1024 * 1024, allowed_mime_types: ['image/png', 'image/jpeg', 'image/webp'] }),
     });
     const text = await res.text();
     if (res.ok) return 'created';

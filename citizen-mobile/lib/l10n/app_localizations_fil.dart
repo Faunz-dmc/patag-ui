@@ -231,7 +231,7 @@ class AppLocalizationsFil extends AppLocalizations {
   String get errCitizenOnly => 'Citizen account ang gamitin sa app na ito.';
 
   @override
-  String get errPhotoTooLarge => 'Pumili ng photo na mas maliit sa 8 MB.';
+  String get errPhotoTooLarge => 'Pumili ng photo na mas maliit sa 3.5 MB.';
 
   @override
   String get errPhotoType => 'Pumili ng JPEG, PNG o WebP na photo.';
@@ -441,7 +441,7 @@ class AppLocalizationsFil extends AppLocalizations {
 
   @override
   String get photoRequirements =>
-      'JPEG, PNG o WebP · hanggang 8 MB bawat photo';
+      'JPEG, PNG o WebP · hanggang 3.5 MB bawat photo';
 
   @override
   String removePhoto(String name) {
@@ -949,7 +949,7 @@ class AppLocalizationsFil extends AppLocalizations {
 
   @override
   String get guidePhotoBody =>
-      'Kumuha ng malinaw na photo ng sirang bahagi. Huwag tumayo sa gitna ng trapiko. Mag-upload ng JPEG, PNG o WebP na mas maliit sa 8 MB.';
+      'Kumuha ng malinaw na photo ng sirang bahagi. Huwag tumayo sa gitna ng trapiko. Mag-upload ng JPEG, PNG o WebP na mas maliit sa 3.5 MB.';
 
   @override
   String get guideLocationTitle => '2. I-set ang lokasyon';

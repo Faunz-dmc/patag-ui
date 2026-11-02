@@ -1535,7 +1535,7 @@ function Details({ mode = "detail" }: { mode?: string }) {
                   <label className="upload">
                     <Camera size={22} />
                     <strong>Add after-repair photos</strong>
-                    <span>PNG, JPEG or WebP · up to 8 MB per photo</span>
+                    <span>PNG, JPEG or WebP · up to 3.5 MB per photo</span>
                     <input
                       aria-label="After-repair photos"
                       type="file"

@@ -217,6 +217,6 @@ test('oversized bodies get a JSON 413', async () => {
     const citizen = (await login('citizen')).data.token;
     const big = await call('/uploads', { data: 'data:image/png;base64,' + 'A'.repeat(8000) }, citizen);
     assert.equal(big.status, 413);
-    assert.equal(big.data.error, 'Photo must be under 8 MB.');
+    assert.equal(big.data.error, 'Photo must be under 3.5 MB.');
   } finally { await close(); }
 });

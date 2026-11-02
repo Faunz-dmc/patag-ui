@@ -174,7 +174,7 @@ class PatagStore extends ChangeNotifier {
 
   Future<Map<String, dynamic>> upload(XFile file) async {
     final bytes = await file.readAsBytes();
-    if (bytes.length > 8 * 1024 * 1024) {
+    if (bytes.length > 3.5 * 1024 * 1024) {
       throw const PatagException(PatagErrorKind.photoTooLarge);
     }
     final name = file.name.toLowerCase();

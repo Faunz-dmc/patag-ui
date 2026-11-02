@@ -52,8 +52,8 @@ final _english = lookupAppLocalizations(const Locale('en'));
 /// Messages the backend sends in other words than the app's English text.
 final Map<String, String Function(AppLocalizations)> _serverAliases = {
   'Choose a PNG, JPEG or WebP image.': (l) => l.errorPhotoType,
-  'Photo must be under 8 MB.': (l) => l.errorPhotoTooLarge,
-  'Invalid image or file exceeds 8 MB.': (l) => l.errorPhotoTooLarge,
+  'Photo must be under 3.5 MB.': (l) => l.errorPhotoTooLarge,
+  'Invalid image or file exceeds 3.5 MB.': (l) => l.errorPhotoTooLarge,
 };
 
 /// Every translated message that the backend sends with the same English text.

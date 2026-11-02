@@ -28,8 +28,8 @@ export interface AppOptions {
 }
 
 const SESSION_MS = 8 * 60 * 60 * 1000;
-const MAX_PHOTO = 8 * 1024 * 1024;
-const BODY_LIMIT = 12 * 1024 * 1024; // base64 of an 8 MB photo plus JSON overhead
+const MAX_PHOTO = 3.5 * 1024 * 1024;
+const BODY_LIMIT = 6 * 1024 * 1024; // base64 of a 3.5 MB photo plus JSON overhead
 
 const photoRef = z.object({
   id: z.string().min(1).max(100),
@@ -120,7 +120,7 @@ export function buildApp({ store, blobs, corsOrigins = [], logger = false, bodyL
 
   app.setErrorHandler((err: any, req, reply) => {
     if (err instanceof HttpError) return reply.code(err.status).send({ error: err.message });
-    if (err.code === 'FST_ERR_CTP_BODY_TOO_LARGE') return reply.code(413).send({ error: 'Photo must be under 8 MB.' });
+    if (err.code === 'FST_ERR_CTP_BODY_TOO_LARGE') return reply.code(413).send({ error: 'Photo must be under 3.5 MB.' });
     if (err.code === 'FST_ERR_CTP_INVALID_MEDIA_TYPE') return reply.code(415).send({ error: 'Send JSON with Content-Type: application/json.' });
     if (err.statusCode && err.statusCode < 500) return reply.code(err.statusCode).send({ error: 'Invalid request.' });
     req.log.error(err);
@@ -285,7 +285,7 @@ export function buildApp({ store, blobs, corsOrigins = [], logger = false, bodyL
       if (!m) fail(400, 'Choose a PNG, JPEG or WebP image.');
       const type = m![1];
       const bytes = Buffer.from(m![2], 'base64');
-      if (bytes.length > MAX_PHOTO || bytes.length < 8) fail(400, 'Invalid image or file exceeds 8 MB.');
+      if (bytes.length > MAX_PHOTO || bytes.length < 8) fail(400, 'Invalid image or file exceeds 3.5 MB.');
       const magic = type === 'png' ? bytes.subarray(0, 8).equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]))
         : type === 'jpeg' ? bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff
         : bytes.toString('ascii', 0, 4) === 'RIFF' && bytes.toString('ascii', 8, 12) === 'WEBP';

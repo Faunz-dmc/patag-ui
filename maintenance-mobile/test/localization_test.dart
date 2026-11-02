@@ -162,7 +162,7 @@ void main() {
       expect(errorText(en, known), known.serverMessage);
       expect(errorText(fil, Exception('Session expired. Sign in again.')),
           fil.errorSessionExpired);
-      expect(translateServerMessage(fil, 'Invalid image or file exceeds 8 MB.'),
+      expect(translateServerMessage(fil, 'Invalid image or file exceeds 3.5 MB.'),
           fil.errorPhotoTooLarge);
       expect(translateServerMessage(fil, 'A brand new server message.'),
           'A brand new server message.');

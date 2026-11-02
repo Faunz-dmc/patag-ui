@@ -509,7 +509,7 @@ abstract class AppLocalizations {
   /// No description provided for @errPhotoTooLarge.
   ///
   /// In en, this message translates to:
-  /// **'Choose a photo under 8 MB.'**
+  /// **'Choose a photo under 3.5 MB.'**
   String get errPhotoTooLarge;
 
   /// No description provided for @errPhotoType.
@@ -863,7 +863,7 @@ abstract class AppLocalizations {
   /// No description provided for @photoRequirements.
   ///
   /// In en, this message translates to:
-  /// **'JPEG, PNG or WebP · maximum 8 MB per image'**
+  /// **'JPEG, PNG or WebP · maximum 3.5 MB per image'**
   String get photoRequirements;
 
   /// No description provided for @removePhoto.
@@ -1769,7 +1769,7 @@ abstract class AppLocalizations {
   /// No description provided for @guidePhotoBody.
   ///
   /// In en, this message translates to:
-  /// **'Take clear photos of the damaged surface. Do not stand in traffic. Upload JPEG, PNG or WebP images under 8 MB.'**
+  /// **'Take clear photos of the damaged surface. Do not stand in traffic. Upload JPEG, PNG or WebP images under 3.5 MB.'**
   String get guidePhotoBody;
 
   /// No description provided for @guideLocationTitle.
