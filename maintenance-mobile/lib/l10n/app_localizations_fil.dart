@@ -113,19 +113,6 @@ class AppLocalizationsFil extends AppLocalizations {
       'Ang LGU Admin ang nagbibigay at namamahala ng mga maintenance account. Kausapin ang inyong supervisor para ma-reset ang login ninyo.';
 
   @override
-  String get loginDemoTitle => 'Subukan ang demo (kunwaring data)';
-
-  @override
-  String get loginDemoBody =>
-      'Hiwalay na test access para sa nakahandang crew account.';
-
-  @override
-  String get loginDemoOpening => 'Binubuksan…';
-
-  @override
-  String get loginDemoButton => 'Buksan ang maintenance demo';
-
-  @override
   String get navHome => 'Home';
 
   @override

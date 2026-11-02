@@ -669,12 +669,6 @@ class AppLocalizationsFil extends AppLocalizations {
   String get forgotPassword => 'Nakalimutan ang password?';
 
   @override
-  String get exploreDemoNote => 'Subukan ang demo kahit walang password.';
-
-  @override
-  String get continueAsDemo => 'Ituloy bilang demo citizen';
-
-  @override
   String get notifications => 'Mga notification';
 
   @override

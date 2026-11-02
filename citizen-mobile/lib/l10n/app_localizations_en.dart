@@ -665,12 +665,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get forgotPassword => 'Forgot password?';
 
   @override
-  String get exploreDemoNote => 'Explore the demo without a password.';
-
-  @override
-  String get continueAsDemo => 'Continue as demo citizen';
-
-  @override
   String get notifications => 'Notifications';
 
   @override

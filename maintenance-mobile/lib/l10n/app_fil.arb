@@ -39,10 +39,6 @@
   "loginAccountAssigned": "Account na bigay ng LGU Admin",
   "loginForgotPassword": "Nakalimutan ang password?",
   "loginForgotPasswordHelp": "Ang LGU Admin ang nagbibigay at namamahala ng mga maintenance account. Kausapin ang inyong supervisor para ma-reset ang login ninyo.",
-  "loginDemoTitle": "Subukan ang demo (kunwaring data)",
-  "loginDemoBody": "Hiwalay na test access para sa nakahandang crew account.",
-  "loginDemoOpening": "Binubuksan…",
-  "loginDemoButton": "Buksan ang maintenance demo",
 
   "navHome": "Home",
   "navTasks": "Mga Task",

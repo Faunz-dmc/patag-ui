@@ -211,8 +211,6 @@
   "requestRecovery": "Humiling ng recovery",
   "alreadyHaveAccount": "May account ka na? Mag-sign in",
   "forgotPassword": "Nakalimutan ang password?",
-  "exploreDemoNote": "Subukan ang demo kahit walang password.",
-  "continueAsDemo": "Ituloy bilang demo citizen",
 
   "notifications": "Mga notification",
   "helloName": "Kumusta, {name}!",

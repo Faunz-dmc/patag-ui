@@ -292,8 +292,8 @@ class _AuthState extends State<AuthScreen> {
     super.dispose();
   }
 
-  Future<void> submit({bool demo = false}) async {
-    if (!demo && !key.currentState!.validate()) return;
+  Future<void> submit() async {
+    if (!key.currentState!.validate()) return;
     if (register && signupStep < 2) {
       setState(() {
         signupStep++;
@@ -318,26 +318,20 @@ class _AuthState extends State<AuthScreen> {
         success = data['message'];
       } else {
         await store.authenticate(
-          demo
-              ? '/auth/demo'
-              : register
-                  ? '/auth/register'
-                  : '/auth/login',
-          demo
-              ? {'role': 'citizen'}
-              : {
-                  'name': name.text.trim(),
-                  'email': email.text.trim(),
-                  'password': password.text,
-                  'role': 'citizen',
-                  if (register)
-                    'address': {
-                      'line': addressLine.text.trim(),
-                      'barangay': barangay.text.trim(),
-                      'city': city.text.trim(),
-                      'province': province.text.trim(),
-                    },
-                },
+          register ? '/auth/register' : '/auth/login',
+          {
+            'name': name.text.trim(),
+            'email': email.text.trim(),
+            'password': password.text,
+            'role': 'citizen',
+            if (register)
+              'address': {
+                'line': addressLine.text.trim(),
+                'barangay': barangay.text.trim(),
+                'city': city.text.trim(),
+                'province': province.text.trim(),
+              },
+          },
         );
         if (mounted) home(context);
       }
@@ -525,16 +519,6 @@ class _AuthState extends State<AuthScreen> {
                       onPressed: () => go(context, '/forgot-password'),
                       child: Text(l.forgotPassword)),
                 ],
-              ),
-              gap(20),
-              Text(
-                l.exploreDemoNote,
-                style: TextStyle(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant),
-              ),
-              OutlinedButton(
-                onPressed: busy ? null : () => submit(demo: true),
-                child: Text(l.continueAsDemo),
               ),
             ],
           ],

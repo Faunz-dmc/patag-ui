@@ -112,19 +112,6 @@ class AppLocalizationsEn extends AppLocalizations {
       'Maintenance accounts are assigned and managed by the LGU Admin. Contact your supervisor to reset credentials.';
 
   @override
-  String get loginDemoTitle => 'Explore fictional demo data';
-
-  @override
-  String get loginDemoBody =>
-      'Separate test access for the seeded crew account.';
-
-  @override
-  String get loginDemoOpening => 'Opening…';
-
-  @override
-  String get loginDemoButton => 'Open maintenance demo';
-
-  @override
   String get navHome => 'Home';
 
   @override

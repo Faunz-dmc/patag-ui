@@ -174,7 +174,6 @@ class _MaintenanceLoginState extends State<MaintenanceLogin> {
   final _passwordController = TextEditingController();
   bool _obscure = true;
   bool _loading = false;
-  bool _showDemoDetails = false;
 
   /// Kept as the error itself so its text follows the chosen language.
   Object? _error;
@@ -196,21 +195,6 @@ class _MaintenanceLoginState extends State<MaintenanceLogin> {
         _emailController.text.trim(),
         _passwordController.text,
       );
-      if (mounted) Navigator.of(context).pushReplacementNamed('/dashboard');
-    } catch (e) {
-      if (mounted) setState(() => _error = e);
-    } finally {
-      if (mounted) setState(() => _loading = false);
-    }
-  }
-
-  Future<void> _demoLogin() async {
-    setState(() {
-      _loading = true;
-      _error = null;
-    });
-    try {
-      await store.demoLogin();
       if (mounted) Navigator.of(context).pushReplacementNamed('/dashboard');
     } catch (e) {
       if (mounted) setState(() => _error = e);
@@ -600,99 +584,6 @@ class _MaintenanceLoginState extends State<MaintenanceLogin> {
                             ),
                           ),
                         ],
-                      ),
-                      const SizedBox(height: 24),
-                      // Explore fictional demo data container
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 14,
-                          vertical: 12,
-                        ),
-                        decoration: BoxDecoration(
-                          color: dark
-                              ? const Color(0xFF1B1F28)
-                              : const Color(0xFFFAFAFA),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
-                            color: dark
-                                ? const Color(0xFF2D3341)
-                                : const Color(0xFFE2E8F0),
-                          ),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            InkWell(
-                              onTap: () => setState(
-                                () => _showDemoDetails = !_showDemoDetails,
-                              ),
-                              child: Row(
-                                children: [
-                                  Expanded(
-                                    child: Text(
-                                      l.loginDemoTitle,
-                                      style: TextStyle(
-                                        fontSize: 13,
-                                        fontWeight: FontWeight.w600,
-                                        color: dark ? Colors.white : ink,
-                                      ),
-                                    ),
-                                  ),
-                                  Icon(
-                                    _showDemoDetails
-                                        ? Icons.keyboard_arrow_up_rounded
-                                        : Icons.keyboard_arrow_down_rounded,
-                                    size: 20,
-                                    color:
-                                        dark ? const Color(0xFF94A3B8) : slate,
-                                  ),
-                                ],
-                              ),
-                            ),
-                            if (_showDemoDetails) ...[
-                              const SizedBox(height: 8),
-                              Text(
-                                l.loginDemoBody,
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: dark ? const Color(0xFF94A3B8) : slate,
-                                ),
-                              ),
-                              const SizedBox(height: 12),
-                              SizedBox(
-                                width: double.infinity,
-                                height: 40,
-                                child: OutlinedButton(
-                                  style: OutlinedButton.styleFrom(
-                                    backgroundColor: dark
-                                        ? const Color(0xFF222733)
-                                        : Colors.white,
-                                    side: BorderSide(
-                                      color: dark
-                                          ? const Color(0xFF384050)
-                                          : const Color(0xFFCBD5E1),
-                                    ),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                  ),
-                                  onPressed: _loading ? null : _demoLogin,
-                                  child: Text(
-                                    _loading
-                                        ? l.loginDemoOpening
-                                        : l.loginDemoButton,
-                                    style: TextStyle(
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.w600,
-                                      color: dark ? Colors.white : ink,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ],
-                        ),
                       ),
                     ],
                   ),

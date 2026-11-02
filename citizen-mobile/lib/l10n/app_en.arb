@@ -226,8 +226,6 @@
   "requestRecovery": "Request recovery",
   "alreadyHaveAccount": "Already have an account? Sign in",
   "forgotPassword": "Forgot password?",
-  "exploreDemoNote": "Explore the demo without a password.",
-  "continueAsDemo": "Continue as demo citizen",
 
   "notifications": "Notifications",
   "helloName": "Hello, {name}.",

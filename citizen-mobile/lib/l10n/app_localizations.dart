@@ -1268,18 +1268,6 @@ abstract class AppLocalizations {
   /// **'Forgot password?'**
   String get forgotPassword;
 
-  /// No description provided for @exploreDemoNote.
-  ///
-  /// In en, this message translates to:
-  /// **'Explore the demo without a password.'**
-  String get exploreDemoNote;
-
-  /// No description provided for @continueAsDemo.
-  ///
-  /// In en, this message translates to:
-  /// **'Continue as demo citizen'**
-  String get continueAsDemo;
-
   /// No description provided for @notifications.
   ///
   /// In en, this message translates to:

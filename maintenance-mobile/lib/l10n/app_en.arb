@@ -44,10 +44,6 @@
   "loginAccountAssigned": "Account assigned by LGU Admin",
   "loginForgotPassword": "Forgot password?",
   "loginForgotPasswordHelp": "Maintenance accounts are assigned and managed by the LGU Admin. Contact your supervisor to reset credentials.",
-  "loginDemoTitle": "Explore fictional demo data",
-  "loginDemoBody": "Separate test access for the seeded crew account.",
-  "loginDemoOpening": "Opening…",
-  "loginDemoButton": "Open maintenance demo",
 
   "navHome": "Home",
   "navTasks": "Tasks",

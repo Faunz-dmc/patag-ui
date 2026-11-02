@@ -290,30 +290,6 @@ abstract class AppLocalizations {
   /// **'Maintenance accounts are assigned and managed by the LGU Admin. Contact your supervisor to reset credentials.'**
   String get loginForgotPasswordHelp;
 
-  /// No description provided for @loginDemoTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Explore fictional demo data'**
-  String get loginDemoTitle;
-
-  /// No description provided for @loginDemoBody.
-  ///
-  /// In en, this message translates to:
-  /// **'Separate test access for the seeded crew account.'**
-  String get loginDemoBody;
-
-  /// No description provided for @loginDemoOpening.
-  ///
-  /// In en, this message translates to:
-  /// **'Opening…'**
-  String get loginDemoOpening;
-
-  /// No description provided for @loginDemoButton.
-  ///
-  /// In en, this message translates to:
-  /// **'Open maintenance demo'**
-  String get loginDemoButton;
-
   /// No description provided for @navHome.
   ///
   /// In en, this message translates to:

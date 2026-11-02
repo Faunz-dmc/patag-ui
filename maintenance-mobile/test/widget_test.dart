@@ -5,7 +5,7 @@ import 'package:patag_maintenance/features/screens.dart';
 import 'test_app.dart';
 
 void main() {
-  testWidgets('Maintenance login screen renders and has demo login button',
+  testWidgets('Maintenance login screen renders without the demo box',
       (tester) async {
     await tester.pumpWidget(
       testApp(const MaintenanceLogin()),
@@ -15,7 +15,7 @@ void main() {
     expect(find.text('Safer roads start here.'), findsOneWidget);
     expect(find.text('Welcome back'), findsOneWidget);
     expect(find.text('Log in'), findsNWidgets(2)); // header and button
-    expect(find.text('Explore fictional demo data'), findsOneWidget);
+    expect(find.text('Open maintenance demo'), findsNothing);
   });
 
   testWidgets('Maintenance splash screen displays title and logo',
