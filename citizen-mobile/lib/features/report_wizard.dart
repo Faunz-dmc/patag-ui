@@ -179,10 +179,16 @@ class _ReportWizardState extends State<ReportWizard> {
           ? [
               await picker.pickImage(
                 source: ImageSource.camera,
-                imageQuality: 85,
+                maxWidth: PatagStore.photoMaxSide,
+                maxHeight: PatagStore.photoMaxSide,
+                imageQuality: PatagStore.photoQuality,
               ),
             ].whereType<XFile>().toList()
-          : await picker.pickMultiImage(imageQuality: 85);
+          : await picker.pickMultiImage(
+              maxWidth: PatagStore.photoMaxSide,
+              maxHeight: PatagStore.photoMaxSide,
+              imageQuality: PatagStore.photoQuality,
+            );
       final room = maxPhotos - photos.length;
       for (final file in files.take(room)) {
         final photo = await store.upload(file);

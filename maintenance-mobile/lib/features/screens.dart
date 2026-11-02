@@ -1119,7 +1119,12 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
 
   Future<void> _uploadBeforePhoto(PotholeReport report) async {
     final picker = ImagePicker();
-    final file = await picker.pickImage(source: ImageSource.gallery);
+    final file = await picker.pickImage(
+      source: ImageSource.gallery,
+      maxWidth: PatagMaintenanceStore.photoMaxSide,
+      maxHeight: PatagMaintenanceStore.photoMaxSide,
+      imageQuality: PatagMaintenanceStore.photoQuality,
+    );
     if (file == null) return;
 
     setState(() => _loading = true);
@@ -1150,7 +1155,12 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
 
   Future<void> _uploadAfterPhoto(PotholeReport report) async {
     final picker = ImagePicker();
-    final file = await picker.pickImage(source: ImageSource.gallery);
+    final file = await picker.pickImage(
+      source: ImageSource.gallery,
+      maxWidth: PatagMaintenanceStore.photoMaxSide,
+      maxHeight: PatagMaintenanceStore.photoMaxSide,
+      imageQuality: PatagMaintenanceStore.photoQuality,
+    );
     if (file == null) return;
 
     setState(() => _loading = true);
@@ -1653,7 +1663,12 @@ class _RepairDocumentationScreenState extends State<RepairDocumentationScreen> {
 
   Future<void> _takeAfterPhoto() async {
     final picker = ImagePicker();
-    final file = await picker.pickImage(source: ImageSource.gallery);
+    final file = await picker.pickImage(
+      source: ImageSource.gallery,
+      maxWidth: PatagMaintenanceStore.photoMaxSide,
+      maxHeight: PatagMaintenanceStore.photoMaxSide,
+      imageQuality: PatagMaintenanceStore.photoQuality,
+    );
     if (file == null) return;
 
     setState(() => _loading = true);
