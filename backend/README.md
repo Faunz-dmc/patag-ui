@@ -78,7 +78,7 @@ Web portals are unchanged: they default to `http://127.0.0.1:4100/api` (`cd admi
 | Citizens | Register in the citizen app (saved to Supabase immediately). |
 | LGU administrator | `npm run create-admin` (see Setup step 4). |
 | Maintenance crews | The admin creates teams and crew accounts in admin-web. Crews sign in to maintenance-mobile with that email and password. |
-| Seeded demo accounts | Fictional, **no passwords**. They only work through the "demo"/"Continue as…" buttons when `ALLOW_DEMO=true` on a backend running on your own PC. The server refuses `ALLOW_DEMO=true` together with `npm run api:lan` unless you also set `ALLOW_DEMO_ON_LAN=true` (trusted classroom network only). |
+Passwordless demo authentication is permanently removed. Seeded users need a provisioned password; no environment flag enables demo login.
 
 The Supabase project in `.env` is the **production** project (`main / PRODUCTION`): everything you create while testing is real data. Consider creating a second Supabase project for testing and pointing a copy of `.env` at it.
 

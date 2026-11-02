@@ -49,7 +49,7 @@ npm install
 npm run dev
 ```
 
-Open http://127.0.0.1:5173/admin/login and choose **Continue as LGU administrator**.
+Open http://127.0.0.1:5173/admin/login and sign in using a provisioned administrator email and password.
 
 Maintenance tab:
 
@@ -59,7 +59,7 @@ npm install
 npm run dev
 ```
 
-Open http://127.0.0.1:5174/maintenance/login and choose **Continue as Road Crew Alpha**. Seeded accounts use demo access, not invented passwords. New citizen accounts can register with hashed passwords on the local API.
+Open http://127.0.0.1:5174/maintenance/login and sign in using a provisioned maintenance account. Seeded accounts have no usable sign-in until a password is provisioned. New citizen accounts can register with hashed passwords on the local API.
 
 Native citizen app:
 
@@ -79,7 +79,7 @@ Each web folder includes `.env.example`; copy to `.env.local` only when overridi
 
 ## Demonstrate the workflow
 
-1. Citizen: demo access or register → report → upload photo → GPS/manual location → description/severity → duplicate review → submit.
+1. Citizen: sign in or register → report → upload photo → GPS/manual location → description/severity → duplicate review → submit.
 2. LGU: verification queue → inspect evidence/location → verify → assign a crew.
 3. Maintenance: assignment → start → progress → repair documentation → after photo/notes → submit for administrative verification.
 4. LGU: repair verification → compare evidence → resolve or request additional work.

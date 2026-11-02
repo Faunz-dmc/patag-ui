@@ -314,18 +314,6 @@ function Login() {
       setLoading(false);
     }
   };
-  async function demo() {
-    setLoading(true);
-    try {
-      const r = await request<{ token: string }>("/auth/demo", { role });
-      sessionStorage.setItem("patag-token", r.token);
-      nav(base + "/dashboard");
-    } catch (e) {
-      setError((e as Error).message);
-    } finally {
-      setLoading(false);
-    }
-  }
   return (
     <main className="login">
       <div className="login-card">
@@ -413,17 +401,6 @@ function Login() {
           >
             {recovery ? tr("Back to sign in") : tr("Forgot password?")}
           </button>
-          <div className="login-divider">
-            <span>{tr("or continue with")}</span>
-          </div>
-          <details className="demo-access" open>
-            <summary>{tr("Explore fictional demo data")}</summary>
-            <strong>{tr("Explore the working demo")}</strong>
-            <p>{tr("Fictional reports, local API, and role-based workflows. No official LGU records.")}</p>
-            <button onClick={demo} disabled={loading} className="demo-action-btn">{tr("Continue as")}{" "}{admin ? tr("LGU administrator") : tr("Road Crew Alpha")}
-              <ArrowUpRight size={16} />
-            </button>
-          </details>
           <p className="login-footnote">{tr("Staff accounts are provided by an authorized administrator. Contact your administrator if you need access.")}</p>
         </section>
       </div>

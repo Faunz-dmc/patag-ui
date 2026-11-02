@@ -3,11 +3,11 @@ import assert from 'node:assert/strict';
 import { startServer } from './helpers.ts';
 
 test('team membership uses account IDs atomically, preserves omitted links and denies ineligible callers', async () => {
-  const { call, store, close } = await startServer();
+  const { call, login, store, close } = await startServer();
   try {
-    const admin = (await call('/auth/demo', { role: 'admin' })).data.token;
-    const crew = (await call('/auth/demo', { role: 'maintenance' })).data.token;
-    const citizen = (await call('/auth/demo', { role: 'citizen' })).data.token;
+    const admin = (await login('admin')).data.token;
+    const crew = (await login('maintenance')).data.token;
+    const citizen = (await login('citizen')).data.token;
     const users = (await call('/bootstrap', undefined, admin)).data.users;
     const member = users.find((u: any) => u.role === 'maintenance' && u.active);
     const other = await store.insertUser({ name: member.name, email: 'same-name@example.test', role: 'maintenance', active: true, teamId: member.teamId, address: null, emailVerified: false, passwordHash: null });
@@ -37,38 +37,38 @@ test('team membership uses account IDs atomically, preserves omitted links and d
 });
 
 test('removed crew has no report or notification access and can be reassigned', async () => {
-  const { call, store, close } = await startServer();
+  const { call, login, store, close } = await startServer();
   try {
-    const admin = (await call('/auth/demo', { role: 'admin' })).data.token;
-    const login = (await call('/auth/demo', { role: 'maintenance' })).data;
-    const before = (await call('/bootstrap', undefined, login.token)).data;
+    const admin = (await login('admin')).data.token;
+    const crewLogin = (await login('maintenance')).data;
+    const before = (await call('/bootstrap', undefined, crewLogin.token)).data;
     const assigned = before.reports[0];
     assert.ok(assigned);
     const unassigned = (await store.listReports({})).find(r => !r.teamId)!;
     assert.ok(unassigned);
-    const team = await store.teamById(login.user.teamId);
+    const team = await store.teamById(crewLogin.user.teamId);
     assert.equal((await call('/teams', { id: team!.id, name: 'Must rollback', active: false, memberIds: [] }, admin, 'PATCH')).status, 409);
     assert.equal((await store.teamById(team!.id))!.name, team!.name);
-    assert.equal((await store.userById(login.user.id))!.teamId, team!.id);
+    assert.equal((await store.userById(crewLogin.user.id))!.teamId, team!.id);
     assert.equal((await call('/teams', { id: team!.id, name: team!.name, memberIds: [] }, admin, 'PATCH')).status, 200);
-    const after = (await call('/bootstrap', undefined, login.token)).data;
+    const after = (await call('/bootstrap', undefined, crewLogin.token)).data;
     assert.deepEqual(after.reports, []);
     assert.deepEqual(after.notifications, []);
     for (const id of [assigned.id, unassigned.id]) {
-      assert.equal((await call('/reports/' + id, undefined, login.token)).status, 403);
-      assert.equal((await call('/reports/' + id + '/events', { action: 'start' }, login.token)).status, 403);
+      assert.equal((await call('/reports/' + id, undefined, crewLogin.token)).status, 403);
+      assert.equal((await call('/reports/' + id + '/events', { action: 'start' }, crewLogin.token)).status, 403);
     }
-    assert.equal((await call('/users', { id: login.user.id, name: 'Unassigned member' }, admin, 'PATCH')).status, 200);
-    assert.equal((await call('/teams', { id: team!.id, name: team!.name, memberIds: [login.user.id] }, admin, 'PATCH')).status, 200);
-    assert.ok((await call('/bootstrap', undefined, login.token)).data.reports.some((r: any) => r.id === assigned.id));
+    assert.equal((await call('/users', { id: crewLogin.user.id, name: 'Unassigned member' }, admin, 'PATCH')).status, 200);
+    assert.equal((await call('/teams', { id: team!.id, name: team!.name, memberIds: [crewLogin.user.id] }, admin, 'PATCH')).status, 200);
+    assert.ok((await call('/bootstrap', undefined, crewLogin.token)).data.reports.some((r: any) => r.id === assigned.id));
   } finally { await close(); }
 });
 
 
 test('concurrent unrelated account edits cannot undo crew transfer', async () => {
-  const { call, store, close } = await startServer();
+  const { call, login, store, close } = await startServer();
   try {
-    const admin = (await call('/auth/demo', { role: 'admin' })).data.token;
+    const admin = (await login('admin')).data.token;
     const member = (await store.listUsers()).find(u => u.role === 'maintenance' && u.active)!;
     const team = (await call('/teams', { name: 'Concurrent target' }, admin)).data;
     const [edit, move] = await Promise.all([

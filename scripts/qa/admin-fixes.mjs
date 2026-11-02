@@ -4,7 +4,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createServer } from '../../admin-web/node_modules/vite/dist/node/index.js';
 import { chromium, expect } from '../../admin-web/node_modules/@playwright/test/index.mjs';
-import { startServer } from '../../backend/test/helpers.ts';
+import { startServer, TEST_PASSWORD } from '../../backend/test/helpers.ts';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const origin = 'http://127.0.0.1:5189';
@@ -37,9 +37,10 @@ try {
   assert.equal(await page.evaluate(async () => (await import('/src/api.ts')).API), fixture.base, 'browser must use the isolated fixture API');
   async function login() {
     await go('login');
-    const button = page.getByRole('button', { name: 'Continue as LGU administrator' });
-    if (!await button.isVisible()) await page.locator('summary').click();
-    await button.click(); await page.getByRole('heading', { name: 'Roads overview', exact: true }).waitFor();
+    await expect(page.locator('.demo-access')).toHaveCount(0);
+    await page.getByLabel('Email address', { exact: true }).fill('lgu@example.test');
+    await page.locator('input[name=password]').fill(TEST_PASSWORD);
+    await page.getByRole('button', { name: 'Sign in', exact: true }).click(); await page.getByRole('heading', { name: 'Roads overview', exact: true }).waitFor();
   }
   async function geometry(scope) {
     const input = scope.locator('input[name=password]');

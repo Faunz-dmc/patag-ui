@@ -2,7 +2,7 @@
 
 Base: web `VITE_API_URL=http://127.0.0.1:4100/api`; Android emulator `--dart-define=API_URL=http://10.0.2.2:4100/api`. The Android localhost address points at Android itself. For physical devices use a reachable development endpoint; the service intentionally binds loopback, so prefer `adb reverse tcp:4100 tcp:4100` and API_URL=http://127.0.0.1:4100/api for a USB-connected device. Tokens are memory-only on Android and sessionStorage on web. Restarting the API invalidates all sessions.
 
-`Authorization: Bearer <token>` is required except auth/demo, registration, login, recovery, public map, health and evidence URLs. The open demo endpoint is for LOCAL TESTING ONLY. Role and ownership checks occur again in the mock API. Error body: `{ "error": "Human readable message" }`; 400 validation, 401 expired session, 403 ownership/role, 404 missing record, 409 invalid workflow transition, 413 oversize body.
+`Authorization: Bearer <token>` is required except registration, login, recovery, public map, health and evidence URLs. Passwordless demo endpoints are permanently removed and return 404. Role and ownership checks occur again in the mock API. Error body: `{ "error": "Human readable message" }`; 400 validation, 401 expired session, 403 ownership/role, 404 missing record, 409 invalid workflow transition, 413 oversize body.
 
 ## Models
 
@@ -29,7 +29,6 @@ Base: web `VITE_API_URL=http://127.0.0.1:4100/api`; Android emulator `--dart-def
 | Method / path | Role | Body / result |
 |---|---|---|
 | GET /health | public | local demo health |
-| POST /auth/demo | public, local-only | `{ "role": "admin" }` -> token + user; supports citizen and maintenance |
 | POST /auth/register | public | name, email, address {line?, barangay, city, province}, password -> citizen token + user |
 | POST /auth/login | public | email, password -> token + user |
 | POST /auth/recovery | public | email -> demo confirmation, no email sent |
@@ -80,14 +79,14 @@ CSV/PDF exports are generated in the admin frontend from its authorized report s
 - Admin `PATCH /settings` validates and saves shared agency/city/province. New reports inherit the configured agency.
 - Admin `POST /teams` creates a team; `PATCH /teams` edits its name/active state. Teams with active members or open work cannot be deactivated.
 - Admin `POST /users` takes name/email/password/role/teamId and creates an account. Maintenance roles require an active team. `PATCH /users` also updates team membership. Password material is never returned by these endpoints.
-- Demo-only `GET /auth/demo/accounts` lists active fictional accounts; `POST /auth/demo` optionally selects `userId` within a role. Do not expose demo authentication publicly.
+- Passwordless demo authentication and account discovery are removed. `/auth/demo` and `/auth/demo/accounts` return 404 regardless of legacy enable flags.
 - Admin report event `{action:"publication", approved:true|false}` controls public photo visibility. New before/after evidence clears approval. Original photos remain available to authorized roles. This is a publication workflow, not automatic face/plate redaction or secure object-storage authorization.
 
 ## Authentication follow-up
 
 Citizen signup now requires name (1–100 characters), normalized email (maximum 254), private address (barangay, city or municipality, province; optional street/house number), and a password of 15–128 characters; the same creation policy applies to staff provisioning. Optional `role` on `/auth/login` must match the account. `/auth/register` ignores role/team/active injection and always creates an active citizen with `emailVerified:false`.
 
-Sessions expire after eight hours and are revoked on logout. Registration/login are limited to 20 requests per minute per client/endpoint in the Node service. Demo endpoints only select seeded accounts without password hashes; `createServer({allowDemo:false})` disables them. `/me` allows the citizen to correct the private address with the same validation. It cannot change email without a verified recovery workflow. See `docs/auth-flow/README.md` for preview boundaries and test evidence.
+Sessions expire after eight hours and are revoked on logout or password changes. Tokens issued before demo removal are rejected; users must sign in again once. Registration/login are limited to 20 requests per minute per client/endpoint in the Node service. Demo endpoints are permanently removed. Seeded accounts without passwords cannot authenticate; provisioning or changing a password revokes prior sessions. `/me` allows the citizen to correct the private address with the same validation. It cannot change email without a verified recovery workflow. See `docs/auth-flow/README.md` for preview boundaries and test evidence.
 
 
 ## Admin crew membership editing
@@ -96,4 +95,6 @@ The PostgreSQL API accepts `POST /teams` with `{name, active?, memberIds?}` and 
 
 Providing IDs replaces the team's active membership atomically with its metadata. Selecting an account transfers it from its previous team; removing it leaves the account unassigned, with no team report/notification access. Inactive account links are preserved. Omitting `memberIds` preserves existing memberships. Nonexistent, inactive, non-maintenance, duplicate or malformed selections return 400. An inactive target cannot receive members; open work still prevents deactivation (409). Account edits share the membership transaction locks to avoid restoring stale links.
 
-Local migration `002_unassigned_crew.sql` removes only the `maintenance_has_team` constraint from the local v1 schema. Existing accounts, teams, report assignments, and foreign keys remain. New maintenance accounts still require an active team; existing removed accounts can be edited or reassigned. This migration has been exercised only in isolated PGlite databases. The hosted checksum mismatch remains unresolved: do not run backend startup (which automatically migrates), migration scripts, password initialization, or deployment against the hosted project until its original migration is recovered and a compatible upgrade is reviewed.
+Local migration `002_unassigned_crew.sql` removes only the `maintenance_has_team` constraint from the current v1 schema. Existing accounts, teams, report assignments, and foreign keys remain. New maintenance accounts still require an active team; existing removed accounts can be edited or reassigned. The original `202610270001_admin.sql` has now been recovered byte-for-byte in `backend/legacy/`; its SHA-256 matches the live legacy ledger. A read-only check on 3 November 2026 confirmed that the configured database already records both current migrations, alongside the preserved legacy schema. No hosted upgrade was needed or performed for this repair.
+
+Startup, migration, seed, and admin provisioning validate migration lineage before migration writes. A recognized current baseline may coexist with the exact recovered legacy ledger; legacy-only schemas, missing current baseline tables, unknown migration histories, and changed or additional legacy records are rejected. Run `npm --prefix backend run check:migrations` for a read-only diagnosis. The recovered SQL is an immutable reference, never replayed by the current runner. Neither ledger is rewritten, and legacy profiles are not merged into current authentication. See [migration recovery and verification](migration-recovery.md) for scope and evidence; full hosted flow acceptance, Storage setup, and deployment are separate from this check.

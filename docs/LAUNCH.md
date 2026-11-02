@@ -47,7 +47,7 @@ npm run api
 
 Ready when you see `PATAG API http://127.0.0.1:4100/api`.
 
-**Want the "Continue as…" demo buttons?** Set `ALLOW_DEMO=true` in `backend/.env` **before** starting it (or stop with **Ctrl+C** and start again). The startup line then ends with `(demo logins ENABLED: local use only)`. The backend only reads `.env` when it starts.
+Passwordless demo sign-in has been removed. Sign in with a provisioned account; no environment flag can restore demo access.
 
 ---
 
@@ -63,7 +63,6 @@ flutter run --dart-define-from-file=env/emulator.json
 | How to sign in | Steps |
 |---|---|
 | New account | Tap **Create account**. It is saved to Supabase immediately. |
-| Demo citizen | Needs `ALLOW_DEMO=true`. Use the demo option on the sign-in screen. |
 
 **Try it:** Report → add a photo → set the location (or use the map ⛶ full screen → tap the road → **Report a pothole here**) → details → submit.
 
@@ -82,7 +81,6 @@ Open **http://127.0.0.1:5173/admin/login**.
 
 | How to sign in | Steps |
 |---|---|
-| Demo admin | Needs `ALLOW_DEMO=true`. Click **Continue as LGU administrator**. |
 | Real admin account | Create it once in `backend/` (PowerShell): `$env:ADMIN_NAME="Your Name"; $env:ADMIN_EMAIL="you@example.com"; $env:ADMIN_PASSWORD="at least fifteen characters"; npm run create-admin`, then sign in with that email and password. |
 
 **Try it:** open a new report → **Verify** → **Assign** to a team. The admin can also create teams and crew accounts (Accounts / Teams pages).
@@ -111,7 +109,6 @@ Open **http://127.0.0.1:5174/maintenance/login**.
 
 | How to sign in | Steps |
 |---|---|
-| Demo crew (Road Crew Alpha) | Needs `ALLOW_DEMO=true`. Tap **Open maintenance demo**. |
 | Real crew account | The LGU admin creates it in admin-web (with a team). Sign in with that email and password. |
 
 **Try it:** open the assigned task → **Add Before Photo** → **Start** → **Add After Photo** → **Document & Submit Completion**. It then shows "Awaiting LGU verification" until the admin resolves it.
@@ -129,7 +126,7 @@ Both Flutter apps can run on the same emulator: start one, then in another termi
 | USB cable (USB debugging on) | `npm run api` and `npm run mobile:usb` | `flutter run --dart-define-from-file=env/usb.json` |
 | Same Wi-Fi | `npm run api:lan` (prints the address to use) | copy `env/lan.example.json` to `env/lan.json`, put that address in it, `flutter run --dart-define-from-file=env/lan.json` |
 
-Wi-Fi also needs the firewall rule in [backend/README.md](../backend/README.md). Demo logins are refused on Wi-Fi mode unless `ALLOW_DEMO_ON_LAN=true`.
+Wi-Fi also needs the firewall rule in [backend/README.md](../backend/README.md). Passwordless demo login is permanently removed.
 
 ---
 
@@ -137,7 +134,7 @@ Wi-Fi also needs the firewall rule in [backend/README.md](../backend/README.md).
 
 | What you see | Cause | Fix |
 |---|---|---|
-| "Endpoint not found" when pressing a demo/"Continue as…" button | Demo logins are off | Set `ALLOW_DEMO=true` in `backend/.env`, then **restart** the backend |
+| "Endpoint not found" from an old demo button | Passwordless demo login has been removed | Rebuild the web apps and standalone preview; sign in with provisioned account credentials |
 | "Connection timed out" / "Can't reach the PATAG server" / "Failed to fetch" | Backend not running | Step 1: `npm run api` |
 | Backend won't start: port 4100 in use | An old backend is still running | Close its terminal, or in PowerShell: `Get-NetTCPConnection -LocalPort 4100 \| Select OwningProcess`, then `Stop-Process -Id <that number>` |
 | `'C:\Moble' is not recognized` when running Flutter | Terminal uses the old Flutter path (space in "Moble dev") | Run `C:\flutter\bin\flutter run ...`, or restart the PC once |

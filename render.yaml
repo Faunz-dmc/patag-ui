@@ -14,8 +14,6 @@ services:
         value: 0.0.0.0
       - key: TRUST_PROXY
         value: "1"
-      - key: ALLOW_DEMO
-        value: "false"
       - key: STORAGE_BUCKET
         value: report-photos
       - key: SUPABASE_URL

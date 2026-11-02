@@ -94,7 +94,7 @@ export function originAllowed(origin: string, allowed: string[]) {
   return !!m && allowed.includes(`${m[1]}:*`);
 }
 
-export function buildApp({ store, blobs, allowDemo = false, corsOrigins = [], logger = false, bodyLimit = BODY_LIMIT, trustProxy = false, geocode }: AppOptions) {
+export function buildApp({ store, blobs, corsOrigins = [], logger = false, bodyLimit = BODY_LIMIT, trustProxy = false, geocode }: AppOptions) {
   // A hop count becomes Fastify's trust function: trust only the nearest N proxies.
   const trust = typeof trustProxy === 'number' ? (_address: string, hop: number) => hop < trustProxy : trustProxy;
   const app = Fastify({ logger, bodyLimit, trustProxy: trust });
@@ -133,12 +133,13 @@ export function buildApp({ store, blobs, allowDemo = false, corsOrigins = [], lo
   const bearer = (req: FastifyRequest) => (req.headers.authorization || '').replace(/^Bearer\s+/i, '').trim();
   async function currentUser(req: FastifyRequest) {
     const token = bearer(req);
-    const user = token ? await store.sessionUser(sha256(token)) : null;
+    const user = token.startsWith('account:') ? await store.sessionUser(sha256(token)) : null;
     if (!user) fail(401, 'Session expired. Sign in again.');
     return user!;
   }
   async function issue(user: User) {
-    const token = newToken();
+    // The namespace invalidates every token issued before passwordless access was removed.
+    const token = 'account:' + newToken();
     await store.createSession(sha256(token), user.id, new Date(Date.now() + SESSION_MS));
     return { token, user: publicUser(user) };
   }
@@ -206,15 +207,6 @@ export function buildApp({ store, blobs, allowDemo = false, corsOrigins = [], lo
     api.get('/public/reports', async () => (await store.listPublicReports()).map(publicReport));
 
     // ---- auth
-    if (allowDemo) {
-      api.get('/auth/demo/accounts', async () => (await store.listDemoUsers()).map(publicUser));
-      api.post('/auth/demo', async req => {
-        const b = body(req);
-        const user = await store.demoUser(String(b.role || ''), typeof b.userId === 'string' ? b.userId : undefined);
-        if (!user) fail(403, 'Demo role unavailable.');
-        return issue(user!);
-      });
-    }
 
     api.post('/auth/register', async (req, reply) => {
       throttle(req);
@@ -263,7 +255,7 @@ export function buildApp({ store, blobs, allowDemo = false, corsOrigins = [], lo
         user.role === 'admin' ? store.listUsers() : Promise.resolve([]),
       ]);
       const visibleTeams = user.role === 'citizen' ? teams.map(t => ({ ...t, members: [] })) : teams;
-      return { reports, teams: visibleTeams, settings, demo: allowDemo, users: users.map(publicUser), notifications, user: publicUser(user), statuses };
+      return { reports, teams: visibleTeams, settings, demo: false, users: users.map(publicUser), notifications, user: publicUser(user), statuses };
     });
 
     api.patch('/me', async req => {

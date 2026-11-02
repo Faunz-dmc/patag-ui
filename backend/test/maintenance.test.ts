@@ -7,9 +7,9 @@ import { PNG, startServer } from './helpers.ts';
 const CREW = { name: 'Crew Mobile', email: 'crew-mobile@example.test', password: 'Crew-Mobile-12345', role: 'maintenance', teamId: 'team-1' };
 
 test('crew mobile workflow: login, scoping, evidence, completion, return, resolve, notifications', async () => {
-  const { call, close } = await startServer();
+  const { call, login: loginFixture, close } = await startServer();
   try {
-    const admin = (await call('/auth/demo', { role: 'admin' })).data.token;
+    const admin = (await loginFixture('admin')).data.token;
     assert.equal((await call('/users', CREW, admin)).status, 201);
 
     // 1. Login through the maintenance portal; citizens are refused there.
@@ -89,9 +89,9 @@ test('crew mobile workflow: login, scoping, evidence, completion, return, resolv
 });
 
 test('assignment notifies the team by name, and a moved crew member sees the new team on the next poll', async () => {
-  const { call, close } = await startServer();
+  const { call, login, close } = await startServer();
   try {
-    const admin = (await call('/auth/demo', { role: 'admin' })).data.token;
+    const admin = (await login('admin')).data.token;
     const created = (await call('/users', CREW, admin)).data;
     const crew = (await call('/auth/login', { email: CREW.email, password: CREW.password, role: 'maintenance' })).data.token;
     await call('/reports/PTG-2026-0109/events', { action: 'assign', teamId: 'team-1', priority: 'Medium' }, admin);

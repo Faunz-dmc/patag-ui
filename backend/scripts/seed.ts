@@ -8,7 +8,7 @@ const db = pgDb(createPool());
 try {
   await migrate(db);
   await seedAll(new Store(db));
-  console.log('Seeded fictional demo data. Demo accounts have no password; enable ALLOW_DEMO=true locally to use them.');
+  console.log('Seeded fictional demo data. Seeded accounts cannot sign in until an administrator provisions a password.');
 } finally {
   await db.close();
 }

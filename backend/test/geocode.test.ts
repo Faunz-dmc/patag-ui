@@ -58,10 +58,10 @@ test('geocoder: request shape, cache, errors and missing token', async () => {
 
 test('GET /geocode/reverse: auth, validation, rate limit and fallback', async () => {
   const seen: [number, number, string][] = [];
-  const { call, close } = await startServer({ geocode: async (lat, lng, lang) => { seen.push([lat, lng, lang]); return toAddress(malolos); } });
+  const { call, login, close } = await startServer({ geocode: async (lat, lng, lang) => { seen.push([lat, lng, lang]); return toAddress(malolos); } });
   try {
     assert.equal((await call('/geocode/reverse?lat=14.85&lng=120.81')).status, 401);
-    const citizen = (await call('/auth/demo', { role: 'citizen' })).data.token;
+    const citizen = (await login('citizen')).data.token;
     const ok = await call('/geocode/reverse?lat=14.857629&lng=120.81612&lang=fil', undefined, citizen);
     assert.equal(ok.status, 200);
     assert.deepEqual(ok.data, { road: 'MacArthur Highway', barangay: 'Guinhawa', city: 'Malolos', province: 'Bulacan', source: 'mapbox' });
@@ -77,7 +77,7 @@ test('GET /geocode/reverse: auth, validation, rate limit and fallback', async ()
   // No geocoder configured: empty fields, never an error.
   const bare = await startServer();
   try {
-    const citizen = (await bare.call('/auth/demo', { role: 'citizen' })).data.token;
+    const citizen = (await bare.login('citizen')).data.token;
     const r = await bare.call('/geocode/reverse?lat=14.85&lng=120.81', undefined, citizen);
     assert.equal(r.status, 200);
     assert.deepEqual(r.data, { road: '', barangay: '', city: '', province: '', source: 'none' });

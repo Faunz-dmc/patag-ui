@@ -85,21 +85,6 @@ class _MaintenanceSplashState extends State<MaintenanceSplash> {
 class MaintenanceWelcome extends StatelessWidget {
   const MaintenanceWelcome({super.key});
 
-  Future<void> _demoLogin(BuildContext context) async {
-    try {
-      await store.demoLogin();
-      if (context.mounted) {
-        Navigator.of(context).pushReplacementNamed('/dashboard');
-      }
-    } catch (e) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(errorText(context.l10n, e))),
-        );
-      }
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -133,18 +118,6 @@ class MaintenanceWelcome extends StatelessWidget {
             action(l.welcomeSignIn, () {
               Navigator.of(context).pushNamed('/login');
             }),
-            gap(12),
-            OutlinedButton(
-              onPressed: () => _demoLogin(context),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.play_arrow_rounded, color: orange, size: 20),
-                  const SizedBox(width: 6),
-                  Flexible(child: Text(l.welcomeContinueAs('Road Crew Alpha'))),
-                ],
-              ),
-            ),
             gap(28),
             Text(
               l.welcomeFooter,

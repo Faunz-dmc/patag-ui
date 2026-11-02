@@ -25,8 +25,6 @@ export function parseTrustProxy(v: string | undefined): boolean | number | strin
 export const config = {
   port: Number(env.PORT || 4100),
   host: lan ? '0.0.0.0' : env.HOST || '127.0.0.1',
-  allowDemo: bool(env.ALLOW_DEMO),
-  allowDemoOnLan: bool(env.ALLOW_DEMO_ON_LAN),
   trustProxy: parseTrustProxy(env.TRUST_PROXY),
   corsOrigins: (env.CORS_ORIGINS || 'http://127.0.0.1:5173,http://127.0.0.1:5174,http://localhost:5173,http://localhost:5174')
     .split(',').map(s => s.trim()).filter(Boolean),
@@ -35,15 +33,6 @@ export const config = {
   mapboxToken: env.MAPBOX_TOKEN || '',
   bucket: env.STORAGE_BUCKET || 'report-photos',
 };
-
-const loopback = (host: string) => ['127.0.0.1', 'localhost', '::1'].includes(host);
-
-/** Demo logins let anyone act as any seeded role, so they must not be reachable from the network by accident. */
-export function demoExposureError(host: string, allowDemo: boolean, allowDemoOnLan: boolean) {
-  if (!allowDemo || loopback(host) || allowDemoOnLan) return null;
-  return `Refusing to start: ALLOW_DEMO=true while listening on ${host} would let anyone on the network log in as any demo account. ` +
-    'Set ALLOW_DEMO=false, or HOST=127.0.0.1, or (for a classroom demo on a trusted network only) ALLOW_DEMO_ON_LAN=true.';
-}
 
 /** URLs a phone on the same network can use, e.g. http://192.168.1.23:4100/api. */
 export function lanUrls(port: number) {

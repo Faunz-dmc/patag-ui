@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {createServer} from './server.mjs';
+import {createTestServer as createServer, TEST_PASSWORD, testEmail} from './test-fixture.mjs';
 import {seed,publicReport,transition,candidates} from './domain.mjs';
 import {publicReport as previewPublicReport} from '../browser-preview/domain.mjs';
 
@@ -55,7 +55,7 @@ test('workspace settings, crew provisioning and public photo approval connect ac
  const server=await createServer({persist:false});await new Promise(r=>server.listen(0,'127.0.0.1',r));const base=`http://127.0.0.1:${server.address().port}/api`;
  async function call(path,body,token,method){const r=await fetch(base+path,{method:method||(body?'POST':'GET'),headers:{'Content-Type':'application/json',...(token?{Authorization:`Bearer ${token}`}:{})},body:body?JSON.stringify(body):undefined});return {status:r.status,data:await r.json()};}
  try{
-  const admin=(await call('/auth/demo',{role:'admin'})).data.token,citizen=(await call('/auth/demo',{role:'citizen'})).data.token;
+  const admin=(await call('/auth/login',{role:'admin',email:testEmail('admin'),password:TEST_PASSWORD})).data.token,citizen=(await call('/auth/login',{role:'citizen',email:testEmail('citizen'),password:TEST_PASSWORD})).data.token;
   assert.equal((await call('/settings',{agency:'Office',city:'Malolos',province:'Bulacan'},citizen,'PATCH')).status,403);
   assert.equal((await call('/settings',{agency:'Office',city:'Malolos',province:'Bulacan'},admin,'PATCH')).status,200);
   assert.equal((await call('/bootstrap',undefined,citizen)).data.settings.agency,'Office');

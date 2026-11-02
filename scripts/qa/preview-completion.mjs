@@ -1,3 +1,4 @@
+import {gotoDemo} from './demo-session.mjs';
 import {createRequire} from 'node:module';
 import {pathToFileURL} from 'node:url';
 import path from 'node:path';
@@ -10,7 +11,7 @@ const browser=await chromium.launch({channel:'chrome',headless:true});
 const context=await browser.newContext({viewport:{width:1440,height:1000},reducedMotion:'reduce'});
 const results={checks:[],errors:[]};context.on('page',p=>p.on('pageerror',e=>results.errors.push(e.message)));
 const admin=await context.newPage(),citizen=await context.newPage(),crew=await context.newPage();
-const go=async(page,route)=>{await page.goto('about:blank');await page.goto(url+'#/'+route,{waitUntil:'domcontentloaded'});await page.waitForFunction(()=>document.querySelector('h1'));if(!route.endsWith('/login')&&!route.endsWith('/register')){await page.evaluate(async role=>{const r=await fetch('/api/bootstrap');const d=await r.json();if(!r.ok||d.user.role!==role){const login=await fetch('/api/auth/demo',{method:'POST',body:JSON.stringify({role})});const result=await login.json();sessionStorage.setItem('patag-token',result.token);}},route.split('/')[0]);await page.goto('about:blank');await page.goto(url+'#/'+route);}await page.locator('h1').waitFor();};
+const go=async(page,route)=>{await gotoDemo(page,url+'#/'+route);await page.locator('h1').waitFor();};
 const call=async(page,p,body,method)=>page.evaluate(async({p,body,method})=>{const r=await fetch('/api'+p,{method:method||(body?'POST':'GET'),headers:{'Content-Type':'application/json'},body:body?JSON.stringify(body):undefined});const data=await r.json();if(!r.ok)throw Error(data.error);return data;},{p,body,method});
 try{
  await go(admin,'admin/teams');await admin.getByRole('button',{name:'Add team',exact:true}).click();await admin.getByLabel('Team name',{exact:true}).fill('Road Crew Charlie');await admin.getByRole('button',{name:'Save team',exact:true}).click();await expect(admin.getByRole('heading',{name:'Road Crew Charlie',exact:true})).toBeVisible();

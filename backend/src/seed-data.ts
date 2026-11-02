@@ -23,7 +23,7 @@ export const seedTeams: Omit<Team, 'members'>[] = [
 const demoUser = (u: Pick<User, 'id' | 'name' | 'email' | 'role'> & Partial<User>): User =>
   ({ active: true, teamId: null, address: null, emailVerified: false, passwordHash: null, ...u });
 
-// No password hashes: these are reachable only through /auth/demo when ALLOW_DEMO=true.
+// Fictional records have no password and cannot authenticate.
 export const seedUsers: User[] = [
   demoUser({ id: 'citizen-1', name: 'Alex Dela Cruz', email: 'citizen@example.test', role: 'citizen' }),
   demoUser({ id: 'admin-1', name: 'Andrea Reyes', email: 'lgu@example.test', role: 'admin' }),

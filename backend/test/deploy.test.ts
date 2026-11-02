@@ -1,17 +1,8 @@
 // LAN exposure guard, proxy-aware rate limiting and other hosting settings.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { demoExposureError, lanUrls, parseTrustProxy } from '../src/config.ts';
+import { lanUrls, parseTrustProxy } from '../src/config.ts';
 import { startServer } from './helpers.ts';
-
-test('demo logins never start on a network interface by accident', () => {
-  assert.equal(demoExposureError('127.0.0.1', true, false), null);
-  assert.equal(demoExposureError('localhost', true, false), null);
-  assert.equal(demoExposureError('0.0.0.0', false, false), null);
-  assert.match(demoExposureError('0.0.0.0', true, false)!, /Refusing to start/);
-  assert.match(demoExposureError('192.168.1.23', true, false)!, /ALLOW_DEMO_ON_LAN/);
-  assert.equal(demoExposureError('0.0.0.0', true, true), null);
-});
 
 test('TRUST_PROXY parsing', () => {
   assert.equal(parseTrustProxy(undefined), false);

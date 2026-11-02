@@ -13,9 +13,9 @@ const report = (photo: object) => ({
 });
 
 test('web dialogs: null and empty fields are treated as not provided; dates are strict', async () => {
-  const { call, close } = await startServer();
+  const { call, login, close } = await startServer();
   try {
-    const admin = (await call('/auth/demo', { role: 'admin' })).data.token;
+    const admin = (await login('admin')).data.token;
     const nulls = { teamId: null, priority: null, targetDate: null, duplicateOf: null, jurisdiction: null };
     const verify = await call('/reports/PTG-2026-0101/events', { action: 'verify', note: 'Confirmed.', ...nulls }, admin);
     assert.equal(verify.status, 200);
@@ -44,9 +44,9 @@ test('rate limit cannot be dodged with a query string', async () => {
 });
 
 test('history records who acted; publication notes say what changed', async () => {
-  const { call, close } = await startServer();
+  const { call, login, close } = await startServer();
   try {
-    const admin = (await call('/auth/demo', { role: 'admin' })).data.token;
+    const admin = (await login('admin')).data.token;
     const verified = (await call('/reports/PTG-2026-0101/events', { action: 'verify', note: 'Looks right.' }, admin)).data;
     const entry = verified.history.at(-1);
     assert.equal(entry.actor, 'admin');
@@ -63,10 +63,10 @@ test('history records who acted; publication notes say what changed', async () =
 });
 
 test('notifications reach only the people who need them', async () => {
-  const { call, close } = await startServer();
+  const { call, login, close } = await startServer();
   try {
-    const admin = (await call('/auth/demo', { role: 'admin' })).data.token;
-    const crew = (await call('/auth/demo', { role: 'maintenance' })).data.token;
+    const admin = (await login('admin')).data.token;
+    const crew = (await login('maintenance')).data.token;
     const reg = (await call('/auth/register', citizenInput('notes@example.test'))).data;
     const photo = (await call('/uploads', { data: PNG, name: 'p.png' }, reg.token)).data;
     const id = (await call('/reports', report(photo), reg.token)).data.id;
@@ -91,7 +91,7 @@ test('notifications reach only the people who need them', async () => {
 });
 
 test('photos must be uploaded by the person attaching them (or already be on the report)', async () => {
-  const { call, close } = await startServer();
+  const { call, login, close } = await startServer();
   try {
     const a = (await call('/auth/register', citizenInput('a@example.test'))).data.token;
     const b = (await call('/auth/register', citizenInput('b@example.test'))).data.token;
@@ -99,8 +99,8 @@ test('photos must be uploaded by the person attaching them (or already be on the
     assert.equal((await call('/reports', report(aPhoto), b)).status, 400, "B cannot submit A's photo");
     const id = (await call('/reports', report(aPhoto), a)).data.id;
 
-    const admin = (await call('/auth/demo', { role: 'admin' })).data.token;
-    const crew = (await call('/auth/demo', { role: 'maintenance' })).data.token;
+    const admin = (await login('admin')).data.token;
+    const crew = (await login('maintenance')).data.token;
     await call(`/reports/${id}/events`, { action: 'verify' }, admin);
     await call(`/reports/${id}/events`, { action: 'assign', teamId: 'team-1' }, admin);
     // The report's own evidence may be referenced again (e.g. by a teammate's completion screen).
@@ -111,9 +111,9 @@ test('photos must be uploaded by the person attaching them (or already be on the
 });
 
 test('profile edits cannot undo an admin role/active change', async () => {
-  const { call, store, close } = await startServer();
+  const { call, login, store, close } = await startServer();
   try {
-    const admin = (await call('/auth/demo', { role: 'admin' })).data.token;
+    const admin = (await login('admin')).data.token;
     const reg = (await call('/auth/register', citizenInput('profile@example.test'))).data;
     await call('/users', { id: reg.user.id, active: false }, admin, 'PATCH');
     // A /me write that started before the deactivation must not set active back to true.
@@ -125,10 +125,10 @@ test('profile edits cannot undo an admin role/active change', async () => {
 });
 
 test('duplicates must point at a visible original; citizens get 403 on events; no staff names for citizens', async () => {
-  const { call, close } = await startServer();
+  const { call, login, close } = await startServer();
   try {
-    const admin = (await call('/auth/demo', { role: 'admin' })).data.token;
-    const citizen = (await call('/auth/demo', { role: 'citizen' })).data.token;
+    const admin = (await login('admin')).data.token;
+    const citizen = (await login('citizen')).data.token;
     // PTG-2026-0110 is Rejected and 0111 is Duplicate in the seed data.
     for (const target of ['PTG-2026-0110', 'PTG-2026-0111', 'PTG-2026-0101', 'nope']) {
       assert.equal((await call('/reports/PTG-2026-0101/events', { action: 'duplicate', duplicateOf: target }, admin)).status, 400, target);

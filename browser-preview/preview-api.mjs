@@ -6,7 +6,7 @@ let memory;const attempts=new Map();
 function read(){try{return workspace(JSON.parse(localStorage.getItem(KEY))||seed())}catch{return workspace(memory||seed())}}
 function save(db){memory=db;try{localStorage.setItem(KEY,JSON.stringify(db))}catch{throw Object.assign(Error('Browser storage is full. Remove large preview photos or reset this demo.'),{status:400})}}
 const response=(data,status=200)=>new Response(JSON.stringify(data),{status,headers:{'Content-Type':'application/json'}});
-export async function enterRole(role){const token=sessionStorage.getItem('patag-token');if(!token)return;const db=read(),session=db.sessions?.[token];const user=db.users.find(u=>u.id===session?.userId&&u.active);if(!user||session.expires<=Date.now()||user.role!==role)sessionStorage.removeItem('patag-token');}
+export async function enterRole(role){const token=sessionStorage.getItem('patag-token');if(!token)return;const db=read(),session=token.startsWith('account:')?db.sessions?.[token]:undefined;const user=db.users.find(u=>u.id===session?.userId&&u.active&&u.hash);if(!user||session.expires<=Date.now()||user.role!==role)sessionStorage.removeItem('patag-token');}
 export function installPreviewApi(){
  const original=window.fetch.bind(window);
  window.fetch=async(input,options={})=>{
@@ -15,18 +15,17 @@ export function installPreviewApi(){
   let db=read(),body={};try{body=typeof options.body==='string'?JSON.parse(options.body):{};}catch{return response({error:'Invalid request'},400)}
   const p=url.pathname.slice(4),method=options.method||'GET';
   const token=new Headers(options.headers).get('Authorization')?.replace('Bearer ','')||sessionStorage.getItem('patag-token')||'';
-  db.sessions??={};const session=db.sessions[token];const user=db.users.find(u=>u.id===session?.userId&&session.expires>Date.now()&&u.active);
-  const issue=u=>{const token=crypto.randomUUID();db.sessions[token]={userId:u.id,expires:Date.now()+8*60*60*1000};save(db);return {token,user:publicUser(u)}};
+  db.sessions??={};const session=token.startsWith('account:')?db.sessions[token]:undefined;const user=db.users.find(u=>u.id===session?.userId&&session.expires>Date.now()&&u.active&&u.hash);
+  const issue=u=>{const token='account:'+crypto.randomUUID();db.sessions[token]={userId:u.id,expires:Date.now()+8*60*60*1000};save(db);return {token,user:publicUser(u)}};
   const notify=(r,title)=>{for(const role of ['admin','citizen','maintenance']){if(role==='maintenance'&&!r.teamId)continue;db.notifications.unshift({id:crypto.randomUUID(),role,userId:role==='citizen'?r.reporterId:null,teamId:r.teamId,reportId:r.id,title,at:new Date().toISOString(),read:false});}};
   try{
    if(['/auth/login','/auth/register'].includes(p)){const now=Date.now();let a=attempts.get(p);if(!a||a.until<now){a={count:0,until:now+60000};attempts.set(p,a);}if(++a.count>20)return response({error:'Too many attempts. Wait a minute and try again.'},429);}
-   if(p==='/auth/demo/accounts')return response(db.users.filter(u=>u.active&&!u.hash).map(publicUser));
-   if(p==='/auth/demo'){const u=db.users.find(u=>u.role===body.role&&u.active&&!u.hash&&(!body.userId||u.id===body.userId));if(!u)return response({error:'Preview account inactive. Reset the demo to continue.'},403);return response(issue(u));}
+   if(p.startsWith('/auth/demo'))return response({error:'Endpoint not found.'},404);
    if(p==='/auth/login'){
     const u=db.users.find(u=>u.email.toLowerCase()===String(body.email).trim().toLowerCase()&&u.active);
     const valid=u?.hash&&typeof body.password==='string'&&body.password.length<=256&&await passwordHash(body.password,u.salt,u.iterations||100000)===u.hash;
     db=read();db.sessions??={};const current=db.users.find(x=>x.id===u?.id&&x.active);
-    if(!valid||!current||current.email!==u.email||current.hash!==u.hash||current.salt!==u.salt||(current.iterations||100000)!==(u.iterations||100000)||(body.role&&current.role!==body.role))return response({error:'Email or password is incorrect. Seeded accounts use demo access.'},401);
+    if(!valid||!current||current.email!==u.email||current.hash!==u.hash||current.salt!==u.salt||(current.iterations||100000)!==(u.iterations||100000)||(body.role&&current.role!==body.role))return response({error:'Email or password is incorrect. Use your account credentials.'},401);
     return response(issue(current));
    }
    if(p==='/auth/register'){
@@ -49,12 +48,12 @@ export function installPreviewApi(){
     let actor=user,passwordFields;
     if(p==='/users'&&(method==='POST'||(method==='PATCH'&&typeof body.password==='string'&&body.password.length>0))){
      const salt=crypto.randomUUID(),hash=await passwordHash(body.password,salt);db=read();
-     const currentSession=db.sessions?.[token];actor=db.users.find(u=>u.id===currentSession?.userId&&currentSession.expires>Date.now()&&u.active);
+     const currentSession=token.startsWith('account:')?db.sessions?.[token]:undefined;actor=db.users.find(u=>u.id===currentSession?.userId&&currentSession.expires>Date.now()&&u.active);
      if(!actor)return response({error:'Session expired. Sign in again.'},401);
      passwordFields={iterations:600000,salt,hash};
     }
     const result=manageWorkspace(db,actor,p,body,method);
-    if(passwordFields)Object.assign(result,passwordFields);
+    if(passwordFields){for(const [token,session] of Object.entries(db.sessions||{}))if(session.userId===result.id)delete db.sessions[token];Object.assign(result,passwordFields);}
     save(db);return response(p==='/users'&&method!=='DELETE'?publicUser(result):result,method==='POST'?201:200);
    }
    if(p==='/notifications/read'){db.notifications.filter(n=>n.role===user.role&&(user.role!=='citizen'||n.userId===user.id)&&(user.role!=='maintenance'||(!!user.teamId&&n.teamId===user.teamId))&&(body.id==='all'||body.id===n.id)).forEach(n=>n.read=true);save(db);return response({ok:true})}

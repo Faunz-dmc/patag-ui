@@ -51,15 +51,6 @@ export class Store {
   async listUsers() {
     return (await this.db.query(`select ${USER_COLS} from users order by created_at, id`)).rows.map(toUser);
   }
-  async demoUser(role: string, userId?: string) {
-    const { rows } = await this.db.query(
-      `select ${USER_COLS} from users where role = $1 and active and password_hash is null and ($2::text is null or id = $2) order by id limit 1`,
-      [role, userId ?? null]);
-    return rows[0] ? toUser(rows[0]) : null;
-  }
-  async listDemoUsers() {
-    return (await this.db.query(`select ${USER_COLS} from users where active and password_hash is null order by role, id`)).rows.map(toUser);
-  }
   async insertUser(u: Omit<User, 'id'> & { id?: string }) {
     const { rows } = await this.db.query(
       `insert into users (id, name, email, role, active, team_id, address, email_verified, password_hash)
@@ -73,11 +64,14 @@ export class Store {
     return rows.length > 0;
   }
   async updateUser(u: User) {
+    // Revoke before provisioning a password so old demo sessions cannot become valid again.
+    await this.db.query(
+      `delete from sessions where user_id = $1 and
+       (not $2::boolean or exists (select 1 from users where id = $1 and password_hash is distinct from $3))`,
+      [u.id, u.active, u.passwordHash]);
     await this.db.query(
       `update users set name = $2, email = $3, role = $4, active = $5, team_id = $6, address = $7::jsonb, password_hash = $8, updated_at = now() where id = $1`,
       [u.id, u.name, u.email, u.role, u.active, u.teamId, json(u.address), u.passwordHash]);
-    // A disabled account loses its sessions immediately (role changes apply on the next request).
-    if (!u.active) await this.db.query('delete from sessions where user_id = $1', [u.id]);
   }
   async deleteUser(id: string, fallbackReporterId: string) {
     await this.db.query('update reports set reporter_id = $2 where reporter_id = $1', [id, fallbackReporterId]);
@@ -101,7 +95,7 @@ export class Store {
   async sessionUser(tokenHash: string) {
     const { rows } = await this.db.query(
       `select ${USER_COLS.split(', ').map(c => 'u.' + c).join(', ')} from sessions s join users u on u.id = s.user_id
-       where s.token_hash = $1 and s.expires_at > now() and u.active`, [tokenHash]);
+       where s.token_hash = $1 and s.expires_at > now() and u.active and u.password_hash is not null`, [tokenHash]);
     return rows[0] ? toUser(rows[0]) : null;
   }
   async deleteSession(tokenHash: string) { await this.db.query('delete from sessions where token_hash = $1', [tokenHash]); }

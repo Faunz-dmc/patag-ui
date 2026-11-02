@@ -9,12 +9,12 @@ const reportInput = (photo: object) => ({
 });
 
 test('cross-role flow, evidence validation, privacy, ownership, feedback and notifications', async () => {
-  const { base, call, close } = await startServer();
+  const { base, call, login, close } = await startServer();
   try {
     assert.equal((await call('/bootstrap')).status, 401);
-    const citizen = (await call('/auth/demo', { role: 'citizen' })).data.token;
-    const admin = (await call('/auth/demo', { role: 'admin' })).data.token;
-    const crew = (await call('/auth/demo', { role: 'maintenance' })).data.token;
+    const citizen = (await login('citizen')).data.token;
+    const admin = (await login('admin')).data.token;
+    const crew = (await login('maintenance')).data.token;
     assert.equal((await call('/uploads', { data: 'data:image/png;base64,dGhpcyBpcyBub3QgYSBwbmc=', name: 'invalid.png' }, citizen)).status, 400);
     const photo = (await call('/uploads', { name: 'test-evidence.png', data: PNG }, citizen)).data;
     assert.match(photo.url, /^\/uploads\/[a-f0-9-]{36}\.png$/);
@@ -67,7 +67,7 @@ test('cross-role flow, evidence validation, privacy, ownership, feedback and not
 });
 
 test('registration, login, ownership isolation, profile and logout', async () => {
-  const { call, close } = await startServer();
+  const { call, login, close } = await startServer();
   try {
     const input = { name: 'Audit Citizen', email: 'audit@example.test', password: 'Audit-Test-12345', address: { line: '', barangay: 'Guinhawa', city: 'Malolos', province: 'Bulacan' } };
     assert.equal((await call('/auth/register', { ...input, password: 'short' })).status, 400);
@@ -102,10 +102,10 @@ test('registration, login, ownership isolation, profile and logout', async () =>
 });
 
 test('workspace settings, crew provisioning and public photo approval connect across roles', async () => {
-  const { call, close } = await startServer();
+  const { call, login, close } = await startServer();
   try {
-    const admin = (await call('/auth/demo', { role: 'admin' })).data.token;
-    const citizen = (await call('/auth/demo', { role: 'citizen' })).data.token;
+    const admin = (await login('admin')).data.token;
+    const citizen = (await login('citizen')).data.token;
     assert.equal((await call('/settings', { agency: 'Office', city: 'Malolos', province: 'Bulacan' }, citizen, 'PATCH')).status, 403);
     assert.equal((await call('/settings', { agency: 'Office', city: 'Malolos', province: 'Bulacan' }, admin, 'PATCH')).status, 200);
     assert.equal((await call('/bootstrap', undefined, citizen)).data.settings.agency, 'Office');
@@ -164,7 +164,7 @@ test('normalization, portal restriction, demo disabled, forged tokens and thrott
     const login = await call('/auth/login', { email: 'NORMALIZED@EXAMPLE.TEST', password: input.password, role: 'citizen' });
     assert.equal(login.status, 200);
     assert.equal((await call('/bootstrap', null, 'preview:' + created.data.user.id + ':forged')).status, 401);
-    // Seeded demo accounts have no password and cannot be logged into.
+    // Incorrect passwords cannot authenticate fixture accounts.
     assert.equal((await call('/auth/login', { email: 'lgu@example.test', password: 'anything-at-all-123' })).status, 401);
     await call('/auth/logout', {}, login.data.token);
     assert.equal((await call('/bootstrap', null, login.data.token)).status, 401);
@@ -175,9 +175,9 @@ test('normalization, portal restriction, demo disabled, forged tokens and thrott
 });
 
 test('duplicates, upload checks, JSON errors and CORS', async () => {
-  const { base, call, close } = await startServer();
+  const { base, call, login, close } = await startServer();
   try {
-    const citizen = (await call('/auth/demo', { role: 'citizen' })).data.token;
+    const citizen = (await login('citizen')).data.token;
     // Seed PTG-2026-0102 and 0105 are both on Paseo del Congreso, ~20 m apart.
     const dupes = await call('/duplicates', { location: { road: 'paseo del congreso', coordinates: { lat: 14.8436, lng: 120.8108 } } }, citizen);
     assert.equal(dupes.status, 200);
@@ -212,9 +212,9 @@ test('duplicates, upload checks, JSON errors and CORS', async () => {
 });
 
 test('oversized bodies get a JSON 413', async () => {
-  const { call, close } = await startServer({ bodyLimit: 4096 });
+  const { call, login, close } = await startServer({ bodyLimit: 4096 });
   try {
-    const citizen = (await call('/auth/demo', { role: 'citizen' })).data.token;
+    const citizen = (await login('citizen')).data.token;
     const big = await call('/uploads', { data: 'data:image/png;base64,' + 'A'.repeat(8000) }, citizen);
     assert.equal(big.status, 413);
     assert.equal(big.data.error, 'Photo must be under 8 MB.');

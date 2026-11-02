@@ -183,12 +183,6 @@ class PatagMaintenanceStore extends ChangeNotifier {
     await _startSession(data);
   }
 
-  /// Seeded demo crew. Works only when the backend runs with ALLOW_DEMO=true.
-  Future<void> demoLogin() async {
-    final data = await call('/auth/demo', body: {'role': 'maintenance'});
-    await _startSession(data);
-  }
-
   Future<void> _startSession(dynamic data) async {
     if (data['user']?['role'] != 'maintenance') {
       throw const PatagException(PatagErrorKind.notMaintenance);

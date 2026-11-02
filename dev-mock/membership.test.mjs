@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as preview from '../browser-preview/domain.mjs';
 import * as mock from './domain.mjs';
-import { createServer } from './server.mjs';
+import {createTestServer as createServer, TEST_PASSWORD, testEmail} from './test-fixture.mjs';
 
 function fixture(domain) {
   const db = domain.workspace(domain.seed());
@@ -61,8 +61,8 @@ test('mock: removed crew sessions cannot access old or unassigned reports or eve
     return { status: res.status, data: await res.json() };
   }
   try {
-    const admin = (await call('/auth/demo', { role: 'admin' })).data.token;
-    const crew = (await call('/auth/demo', { role: 'maintenance' })).data.token;
+    const admin = (await call('/auth/login', { role: 'admin', email: testEmail('admin'), password: TEST_PASSWORD })).data.token;
+    const crew = (await call('/auth/login', { role: 'maintenance', email: testEmail('maintenance'), password: TEST_PASSWORD })).data.token;
     const before = (await call('/bootstrap', undefined, crew)).data;
     const all = (await call('/bootstrap', undefined, admin)).data;
     const team = all.teams.find(t => t.id === before.user.teamId);

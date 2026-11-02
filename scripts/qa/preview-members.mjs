@@ -1,3 +1,4 @@
+import {previewLogin} from './preview-login.mjs';
 import http from 'node:http';
 import fs from 'node:fs/promises';
 import path from 'node:path';
@@ -26,9 +27,7 @@ try {
   }, { endpoint, body, method });
   async function enter(page, role, label) {
     await page.goto(url + '#/' + role + '/login');
-    const demo = page.getByRole('button', { name: label, exact: true });
-    if (!await demo.isVisible()) await page.locator('summary').click();
-    await demo.click(); await expect(page).toHaveURL(new RegExp('#/' + role + '/dashboard'));
+    await previewLogin(page, role); await expect(page).toHaveURL(new RegExp('#/' + role + '/dashboard'));
   }
   await enter(admin, 'admin', 'Continue as LGU administrator');
   await enter(crew, 'maintenance', 'Open maintenance demo');
@@ -60,8 +59,8 @@ try {
   const removed = (await call(crew, '/bootstrap')).data;
   expect(removed.reports).toEqual([]); expect(removed.notifications).toEqual([]);
   for (const id of [originalReport, unassignedReport]) {
-    expect((await call(crew, '/reports/' + id)).status).toBe(403);
-    expect((await call(crew, '/reports/' + id + '/events', { action: 'start' })).status).toBe(403);
+    expect((await call(crew, '/reports/' + id)).status).toBe(404);
+    expect((await call(crew, '/reports/' + id + '/events', { action: 'start' })).status).toBe(404);
   }
   results.checks.push('Existing removed-crew session loses old/unassigned report and event access');
   const team = (await call(admin, '/bootstrap')).data.teams.find(t => t.name === 'Preview Selected Crew');

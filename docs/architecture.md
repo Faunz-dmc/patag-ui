@@ -6,7 +6,7 @@ Three independent applications: Flutter/Dart citizen Android, Vite/React/TypeScr
 
 Source layers: `src/types.ts` contract, `src/api.ts` adapter, `src/App.tsx` route/component composition, `src/styles/app.css` design system. Empty structural folders reserve growth; substantive web code is intentionally centralized for this first working implementation. Flutter has `app/` for theme, `core/` for domain/API, `features/` for citizen workflows, and `shared/widgets/` for components.
 
-Every operational mutation is validated by the mock API, with maintenance team ownership checks. Admin resolution requires an Awaiting Verification completion. The canonical status stays In Progress during completion review. Notifications are role/user/team scoped. This local service has intentionally open demo access and must never be deployed as production authentication.
+Every operational mutation is validated by the mock API, with maintenance team ownership checks. Admin resolution requires an Awaiting Verification completion. The canonical status stays In Progress during completion review. Notifications are role/user/team scoped. Passwordless demo access is removed in the API and standalone preview; seeded accounts require provisioned passwords. The browser preview is a local simulation with editable browser storage, not a server security boundary.
 
 Production requires database transactions, durable account/session handling, real authentication/password recovery, agency and team authorization, upload ownership and malware/image decoding checks, managed object storage, HTTPS, CORS configuration, rate limiting, backup, migration, transactional audit/events, and push/email delivery. Do not place secrets in VITE_ variables or Dart compile-time defines.
 
