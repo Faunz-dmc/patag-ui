@@ -177,7 +177,7 @@
   "errorUnexpectedResponse": "Hindi inaasahang sagot mula sa PATAG server ({code}).",
   "errorRequestFailed": "Hindi natuloy ang request.",
   "errorNotMaintenance": "Hindi pang-road maintenance ang account na ito.",
-  "errorPhotoTooLarge": "Pumili ng photo na mas maliit sa 3.5 MB.",
+  "errorPhotoTooLarge": "Pumili ng photo na mas maliit sa 3 MB.",
   "errorPhotoType": "Pumili ng JPEG, PNG o WebP na photo.",
   "errorPhotoMismatch": "Hindi tugma ang laman ng image sa uri nito.",
   "errorSessionExpired": "Nag-expire na ang session. Mag-sign in ulit.",

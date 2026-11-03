@@ -125,7 +125,7 @@ class PatagMaintenanceStore extends ChangeNotifier {
       'Content-Type': 'application/json',
       if (sentWith != null) 'Authorization': 'Bearer $sentWith',
     };
-    // Photos are sent as base64 (up to ~11 MB), so allow time on mobile data.
+    // Photos are sent as base64 (up to ~4.2 MB), so allow time on mobile data.
     const timeout = Duration(seconds: 20);
     http.Response response;
     try {
@@ -256,14 +256,14 @@ class PatagMaintenanceStore extends ChangeNotifier {
   }
 
   /// Photos are shrunk when picked (longest side, JPEG quality) so a normal
-  /// phone photo lands well under the 3.5 MB upload limit.
+  /// phone photo lands well under the 3 MB upload limit.
   static const photoMaxSide = 1920.0;
   static const photoQuality = 80;
 
   Future<Map<String, dynamic>> upload(XFile file,
       {String kind = 'after'}) async {
     final bytes = await file.readAsBytes();
-    if (bytes.length > 3.5 * 1024 * 1024) {
+    if (bytes.length > 3 * 1024 * 1024) {
       throw const PatagException(PatagErrorKind.photoTooLarge);
     }
     final name = file.name.toLowerCase();

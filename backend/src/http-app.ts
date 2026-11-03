@@ -1,7 +1,7 @@
 // HTTP API implementing docs/api-contract.md. Every response, including errors, is JSON
 // except image bytes; errors are always { "error": "..." }.
 import Fastify, { type FastifyReply, type FastifyRequest } from 'fastify';
-import { randomUUID } from 'node:crypto';
+import { randomUUID, timingSafeEqual } from 'node:crypto';
 import { z } from 'zod';
 import type { BlobStore } from './blobs.ts';
 import { demoSvg } from './demo-svg.ts';
@@ -18,6 +18,7 @@ export interface AppOptions {
   store: Store;
   blobs: BlobStore;
   allowDemo?: boolean;
+  cronSecret?: string;
   corsOrigins?: string[];
   logger?: boolean;
   bodyLimit?: number;
@@ -28,8 +29,8 @@ export interface AppOptions {
 }
 
 const SESSION_MS = 8 * 60 * 60 * 1000;
-const MAX_PHOTO = 3.5 * 1024 * 1024;
-const BODY_LIMIT = 6 * 1024 * 1024; // base64 of a 3.5 MB photo plus JSON overhead
+const MAX_PHOTO = 3 * 1024 * 1024;
+const BODY_LIMIT = 4 * 1024 * 1024 + 64 * 1024; // 3 MiB base64 plus JSON, below Vercel's 4.5 MB limit
 
 const photoRef = z.object({
   id: z.string().min(1).max(100),
@@ -94,7 +95,7 @@ export function originAllowed(origin: string, allowed: string[]) {
   return !!m && allowed.includes(`${m[1]}:*`);
 }
 
-export function buildApp({ store, blobs, corsOrigins = [], logger = false, bodyLimit = BODY_LIMIT, trustProxy = false, geocode }: AppOptions) {
+export function buildApp({ store, blobs, cronSecret = '', corsOrigins = [], logger = false, bodyLimit = BODY_LIMIT, trustProxy = false, geocode }: AppOptions) {
   // A hop count becomes Fastify's trust function: trust only the nearest N proxies.
   const trust = typeof trustProxy === 'number' ? (_address: string, hop: number) => hop < trustProxy : trustProxy;
   const app = Fastify({ logger, bodyLimit, trustProxy: trust });
@@ -120,7 +121,7 @@ export function buildApp({ store, blobs, corsOrigins = [], logger = false, bodyL
 
   app.setErrorHandler((err: any, req, reply) => {
     if (err instanceof HttpError) return reply.code(err.status).send({ error: err.message });
-    if (err.code === 'FST_ERR_CTP_BODY_TOO_LARGE') return reply.code(413).send({ error: 'Photo must be under 3.5 MB.' });
+    if (err.code === 'FST_ERR_CTP_BODY_TOO_LARGE') return reply.code(413).send({ error: 'Photo must be under 3 MB.' });
     if (err.code === 'FST_ERR_CTP_INVALID_MEDIA_TYPE') return reply.code(415).send({ error: 'Send JSON with Content-Type: application/json.' });
     if (err.statusCode && err.statusCode < 500) return reply.code(err.statusCode).send({ error: 'Invalid request.' });
     req.log.error(err);
@@ -186,6 +187,16 @@ export function buildApp({ store, blobs, corsOrigins = [], logger = false, bodyL
   // ---- public
   app.register(async api => {
     api.get('/health', async () => ({ ok: true, mode: 'supabase' }));
+
+    api.get('/internal/purge-sessions', async (req, reply) => {
+      reply.header('Cache-Control', 'no-store');
+      const expected = `Bearer ${cronSecret}`;
+      if (!cronSecret || !timingSafeEqual(Buffer.from(sha256(req.headers.authorization || '')), Buffer.from(sha256(expected)))) {
+        fail(401, 'Unauthorized.');
+      }
+      await store.purgeExpiredSessions();
+      return { ok: true };
+    });
 
     api.get('/demo-evidence.svg', async (_q, reply) => reply.type('image/svg+xml').send(demoSvg(false)));
     api.get('/demo-after.svg', async (_q, reply) => reply.type('image/svg+xml').send(demoSvg(true)));
@@ -285,7 +296,7 @@ export function buildApp({ store, blobs, corsOrigins = [], logger = false, bodyL
       if (!m) fail(400, 'Choose a PNG, JPEG or WebP image.');
       const type = m![1];
       const bytes = Buffer.from(m![2], 'base64');
-      if (bytes.length > MAX_PHOTO || bytes.length < 8) fail(400, 'Invalid image or file exceeds 3.5 MB.');
+      if (bytes.length > MAX_PHOTO || bytes.length < 8) fail(400, 'Invalid image or file exceeds 3 MB.');
       const magic = type === 'png' ? bytes.subarray(0, 8).equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]))
         : type === 'jpeg' ? bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff
         : bytes.toString('ascii', 0, 4) === 'RIFF' && bytes.toString('ascii', 8, 12) === 'WEBP';

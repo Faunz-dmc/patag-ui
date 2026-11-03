@@ -23,9 +23,9 @@ export async function request<T>(
 export async function upload(file: File, kind = "after"): Promise<Photo> {
   if (
     !["image/jpeg", "image/png", "image/webp"].includes(file.type) ||
-    file.size > 3.5 * 1024 * 1024
+    file.size > 3 * 1024 * 1024
   )
-    throw new Error("Choose a JPEG, PNG or WebP photo under 3.5 MB.");
+    throw new Error("Choose a JPEG, PNG or WebP photo under 3 MB.");
   const data = await new Promise<string>((resolve, reject) => {
     const r = new FileReader();
     r.onload = () => resolve(String(r.result));

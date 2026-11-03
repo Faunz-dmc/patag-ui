@@ -173,13 +173,13 @@ class PatagStore extends ChangeNotifier {
   }
 
   /// Photos are shrunk when picked (longest side, JPEG quality) so a normal
-  /// phone photo lands well under the 3.5 MB upload limit.
+  /// phone photo lands well under the 3 MB upload limit.
   static const photoMaxSide = 1920.0;
   static const photoQuality = 80;
 
   Future<Map<String, dynamic>> upload(XFile file) async {
     final bytes = await file.readAsBytes();
-    if (bytes.length > 3.5 * 1024 * 1024) {
+    if (bytes.length > 3 * 1024 * 1024) {
       throw const PatagException(PatagErrorKind.photoTooLarge);
     }
     final name = file.name.toLowerCase();

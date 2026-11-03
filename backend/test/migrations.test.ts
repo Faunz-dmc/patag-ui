@@ -165,3 +165,22 @@ for (const state of ['verified', 'changed checksum', 'extra migration', 'missing
     } finally { await db.close(); }
   });
 }
+
+test('startup requires a current schema without changing tables or migration ledgers', async () => {
+  const { requireCurrentSchema } = await import('../src/db.ts');
+  const db = await fixture();
+  try {
+    const empty = await snapshot(db);
+    await assert.rejects(requireCurrentSchema(db), /Pending migrations/);
+    assert.deepEqual(await snapshot(db), empty);
+    await migrate(db);
+    const schema = await snapshot(db);
+    const ledger = await db.query('select * from schema_migrations order by name');
+    await requireCurrentSchema(db);
+    assert.deepEqual(await snapshot(db), schema);
+    assert.deepEqual(await db.query('select * from schema_migrations order by name'), ledger);
+    await db.query('delete from schema_migrations where name = $1', ['002_unassigned_crew.sql']);
+    await assert.rejects(requireCurrentSchema(db), /Pending migrations/);
+    assert.equal((await db.query('select * from schema_migrations')).rows.length, 1);
+  } finally { await db.close(); }
+});

@@ -100,6 +100,17 @@ export async function checkMigrations(db: Db) {
 
 }
 
+/** Startup validates an already upgraded schema without applying migrations. */
+export async function requireCurrentSchema(db: Db) {
+  await db.tx(async t => {
+    await t.exec('set transaction read only');
+    const { files, done } = await checkMigrations(t);
+    if (files.some(file => !done.has(file))) {
+      throw new Error('Pending migrations. Run npm run migrate as a separate release step before starting the API.');
+    }
+  });
+}
+
 /** Applies migrations/*.sql in name order, each once, each in its own transaction. */
 export async function migrate(db: Db, log: (m: string) => void = () => {}) {
   const { files, done } = await checkMigrations(db);

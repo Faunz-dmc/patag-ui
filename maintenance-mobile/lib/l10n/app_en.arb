@@ -204,7 +204,7 @@
   "@errorUnexpectedResponse": {"placeholders": {"code": {"type": "int"}}},
   "errorRequestFailed": "Request failed.",
   "errorNotMaintenance": "This account does not belong to road maintenance.",
-  "errorPhotoTooLarge": "Choose a photo under 3.5 MB.",
+  "errorPhotoTooLarge": "Choose a photo under 3 MB.",
   "errorPhotoType": "Choose a JPEG, PNG or WebP photo.",
   "errorPhotoMismatch": "Image content does not match its type.",
   "errorSessionExpired": "Session expired. Sign in again.",

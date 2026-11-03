@@ -227,7 +227,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get errCitizenOnly => 'Use a citizen account in this app.';
 
   @override
-  String get errPhotoTooLarge => 'Choose a photo under 3.5 MB.';
+  String get errPhotoTooLarge => 'Choose a photo under 3 MB.';
 
   @override
   String get errPhotoType => 'Choose a JPEG, PNG or WebP photo.';
@@ -439,8 +439,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get chooseFromGallery => 'Choose from gallery';
 
   @override
-  String get photoRequirements =>
-      'JPEG, PNG or WebP · maximum 3.5 MB per image';
+  String get photoRequirements => 'JPEG, PNG or WebP · maximum 3 MB per image';
 
   @override
   String removePhoto(String name) {
@@ -954,7 +953,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get guidePhotoBody =>
-      'Take clear photos of the damaged surface. Do not stand in traffic. Upload JPEG, PNG or WebP images under 3.5 MB.';
+      'Take clear photos of the damaged surface. Do not stand in traffic. Upload JPEG, PNG or WebP images under 3 MB.';
 
   @override
   String get guideLocationTitle => '2. Set the location';

@@ -113,7 +113,8 @@ void main() {
         fil.errTooManyAttempts);
     expect(describeError(fil, server('Choose a PNG, JPEG or WebP image.')),
         fil.errPhotoType);
-    expect(describeError(fil, server('Invalid image or file exceeds 3.5 MB.')),
+    expect(describeError(fil, server('Photo must be under 3 MB.')), fil.errPhotoTooLarge);
+    expect(describeError(fil, server('Invalid image or file exceeds 3 MB.')),
         fil.errPhotoTooLarge);
     expect(describeError(fil, const PatagException(PatagErrorKind.timeout)),
         fil.errTimeout);

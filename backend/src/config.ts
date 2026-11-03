@@ -32,6 +32,7 @@ export const config = {
   supabaseSecretKey: env.SUPABASE_SECRET_KEY || '',
   mapboxToken: env.MAPBOX_TOKEN || '',
   bucket: env.STORAGE_BUCKET || 'report-photos',
+  cronSecret: env.CRON_SECRET || '',
 };
 
 /** URLs a phone on the same network can use, e.g. http://192.168.1.23:4100/api. */
@@ -59,14 +60,25 @@ function caCert() {
 /** Postgres pool for the Supabase session pooler (or any DATABASE_URL). */
 export function createPool() {
   const ca = caCert();
+  if (env.VERCEL && (!ca || bool(env.DB_SSL_DISABLE))) {
+    throw new Error('Vercel requires SUPABASE_DB_CA_CERT and verified database TLS.');
+  }
   if (!ca && !bool(env.DB_SSL_DISABLE)) {
     console.warn('SUPABASE_DB_CA_CERT not set: TLS is encrypted but the server certificate is not verified. Download the CA from Supabase > Database settings.');
   }
   const ssl = bool(env.DB_SSL_DISABLE) ? false : ca ? { ca, rejectUnauthorized: true } : { rejectUnauthorized: false };
-  if (env.DATABASE_URL) return new pg.Pool({ connectionString: env.DATABASE_URL, ssl, max: 10 });
+  const options = { ssl, max: 2, idleTimeoutMillis: 5000, connectionTimeoutMillis: 10000, allowExitOnIdle: true };
+  if (env.DATABASE_URL) {
+    const url = new URL(env.DATABASE_URL);
+    // pg URI options override explicit ssl; keep TLS controlled by the trusted backend settings.
+    for (const key of [...url.searchParams.keys()]) {
+      if (key.startsWith('ssl') || key === 'uselibpqcompat') url.searchParams.delete(key);
+    }
+    return new pg.Pool({ connectionString: url.toString(), ...options });
+  }
   requireEnv('SUPABASE_DB_HOST', 'SUPABASE_DB_USER', 'SUPABASE_DB_PASSWORD');
   return new pg.Pool({
     host: env.SUPABASE_DB_HOST, port: Number(env.SUPABASE_DB_PORT || 5432), database: env.SUPABASE_DB_NAME || 'postgres',
-    user: env.SUPABASE_DB_USER, password: env.SUPABASE_DB_PASSWORD, ssl, max: 10,
+    user: env.SUPABASE_DB_USER, password: env.SUPABASE_DB_PASSWORD, ...options,
   });
 }

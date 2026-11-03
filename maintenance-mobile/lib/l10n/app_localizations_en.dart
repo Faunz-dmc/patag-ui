@@ -545,7 +545,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'This account does not belong to road maintenance.';
 
   @override
-  String get errorPhotoTooLarge => 'Choose a photo under 3.5 MB.';
+  String get errorPhotoTooLarge => 'Choose a photo under 3 MB.';
 
   @override
   String get errorPhotoType => 'Choose a JPEG, PNG or WebP photo.';

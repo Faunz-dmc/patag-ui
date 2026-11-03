@@ -1511,7 +1511,7 @@ function Details({ mode = "detail" }: { mode?: string }) {
                   <label className="upload">
                     <Camera size={22} />
                     <strong>{tr("Add after-repair photos")}</strong>
-                    <span>{tr("PNG, JPEG or WebP · up to 3.5 MB per photo")}</span>
+                    <span>{tr("PNG, JPEG or WebP · up to 3 MB per photo")}</span>
                     <input
                       aria-label={tr("After-repair photos")}
                       type="file"

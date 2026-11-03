@@ -552,7 +552,7 @@ class AppLocalizationsFil extends AppLocalizations {
       'Hindi pang-road maintenance ang account na ito.';
 
   @override
-  String get errorPhotoTooLarge => 'Pumili ng photo na mas maliit sa 3.5 MB.';
+  String get errorPhotoTooLarge => 'Pumili ng photo na mas maliit sa 3 MB.';
 
   @override
   String get errorPhotoType => 'Pumili ng JPEG, PNG o WebP na photo.';

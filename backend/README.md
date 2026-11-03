@@ -47,7 +47,7 @@ npm run dev          # from backend/ (restarts on file changes)
 npm run api          # same, from the repo root
 ```
 
-The API listens on `http://127.0.0.1:4100/api`. Migrations are applied automatically at startup. Keep this terminal open while you use the apps. If an app says "Connection timed out" or "Can't reach the PATAG server", the backend isn't running.
+The API listens on `http://127.0.0.1:4100/api`. Startup only checks migration compatibility in a read-only transaction. Run `npm run migrate` separately before starting an API with pending migrations. Keep this terminal open while you use the apps. If an app says "Connection timed out" or "Can't reach the PATAG server", the backend isn't running.
 
 The mobile apps never talk to Supabase directly: they call this API, which holds the secrets and enforces the workflow. Each app's `env/` folder holds the API address per device ([citizen-mobile/env/README.md](../citizen-mobile/env/README.md)).
 
@@ -124,12 +124,12 @@ The tests run every SQL statement and migration against an embedded Postgres (PG
 
 | Area | Choice |
 |---|---|
-| Layout | `src/app.ts` routes and validation · `src/domain.ts` workflow, privacy projection, field rules · `src/store.ts` all SQL · `src/db.ts` pg adapter and migrations · `src/blobs.ts` Supabase Storage |
+| Layout | `src/http-app.ts` routes and validation · `src/domain.ts` workflow, privacy projection, field rules · `src/store.ts` all SQL · `src/db.ts` pg adapter and migrations · `src/blobs.ts` Supabase Storage |
 | Schema | `migrations/001_init.sql`. Report sub-records (photos, history, updates, completion, feedback, assignment) are `jsonb` columns on `reports`: they are always read and written with their report, which keeps the contract shape exact. Users, sessions, teams, uploads and notifications are relational. |
 | Concurrency | Every workflow event locks its report row (`select … for update`) inside a transaction together with its notifications. |
 | Sessions | Opaque 256-bit random tokens; only SHA-256 hashes are stored. Sessions expire after 8 h, are revoked on logout, and are revoked immediately when an admin disables the account. Supabase Auth was not used because the clients expect this API's `{token, user}` login contract and role model. |
 | Passwords | scrypt (N=2¹⁵, r=8, p=1) via Node's crypto. Memory-hard and needs no native build. Login runs the same hash work for unknown emails. |
-| Photos | PNG/JPEG/WebP ≤ 3.5 MB, verified by magic bytes, stored in the private `report-photos` bucket under random UUID names. Served through `GET /api/uploads/:file` without auth (as the contract requires for `Image.network`/`<img>`); the UUID is the capability. Reports and events only accept photos that were actually uploaded. |
+| Photos | PNG/JPEG/WebP ≤ 3 MB, verified by magic bytes, stored in the private `report-photos` bucket under random UUID names. Served through `GET /api/uploads/:file` without auth (as the contract requires for `Image.network`/`<img>`); the UUID is the capability. Reports and events only accept photos that were actually uploaded. |
 | Database access | RLS is enabled on every table with no policies, and `anon`/`authenticated` privileges are revoked. Supabase's public Data API cannot read anything; only this backend (as the database owner) can. |
 | Rate limiting | Login and registration: 20 requests/min per IP and endpoint, in memory. Use a shared store if you run several instances. |
 | Not included | Real email delivery for `/auth/recovery` (it returns a generic message), push notifications (clients poll), server-side CSV/PDF export. |

@@ -1,5 +1,5 @@
 import { PGlite, type Transaction } from '@electric-sql/pglite';
-import { buildApp } from '../src/app.ts';
+import { buildApp } from '../src/http-app.ts';
 import { MemoryBlobStore } from '../src/blobs.ts';
 import type { ReverseGeocode } from '../src/geocode.ts';
 import { migrate, type Db } from '../src/db.ts';

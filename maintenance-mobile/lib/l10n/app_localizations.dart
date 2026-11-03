@@ -1031,7 +1031,7 @@ abstract class AppLocalizations {
   /// No description provided for @errorPhotoTooLarge.
   ///
   /// In en, this message translates to:
-  /// **'Choose a photo under 3.5 MB.'**
+  /// **'Choose a photo under 3 MB.'**
   String get errorPhotoTooLarge;
 
   /// No description provided for @errorPhotoType.

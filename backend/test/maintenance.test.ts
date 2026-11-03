@@ -1,7 +1,7 @@
 // The exact request sequence maintenance-mobile performs, against real SQL.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { originAllowed } from '../src/app.ts';
+import { originAllowed } from '../src/http-app.ts';
 import { PNG, startServer } from './helpers.ts';
 
 const CREW = { name: 'Crew Mobile', email: 'crew-mobile@example.test', password: 'Crew-Mobile-12345', role: 'maintenance', teamId: 'team-1' };
