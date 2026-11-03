@@ -11,8 +11,11 @@ Deploy only `admin-web` to Pages and `backend` to Vercel. Do not run the root
    migrations. Do not seed or recreate existing accounts as part of deployment.
 2. In Vercel import the repository with Root Directory `backend`, preset Fastify,
    Node 24.x and install command `npm ci`. Keep the preset build/output defaults.
-   The sole Fastify entrypoint is `src/index.ts`; `vercel.json` includes the SQL
-   and exact legacy archive bytes required by the startup compatibility check.
+   The sole Fastify entrypoint is `src/index.ts`; static migration asset URLs in `src/db.ts` ensure the SQL and exact legacy
+   archive bytes are traced into the function. Do not add a `functions` block: CLI
+   65.4.0 rejects it for this Fastify build. Update the migration asset manifest
+   whenever adding a migration. After `vercel build`, run `npm run check:vercel-build`
+   from backend to verify the generated bundle before publishing.
 3. Configure the existing SUPABASE_URL, SUPABASE_SECRET_KEY, SUPABASE_DB_HOST,
    SUPABASE_DB_PORT, SUPABASE_DB_NAME, SUPABASE_DB_USER, SUPABASE_DB_PASSWORD,
    SUPABASE_DB_CA_CERT (trusted PEM), STORAGE_BUCKET=report-photos and exact

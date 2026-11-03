@@ -1,11 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": "fastify",
-  "functions": {
-    "**": {
-      "includeFiles": "{migrations,legacy}/**"
-    }
-  },
   "crons": [
     {
       "path": "/api/internal/purge-sessions",

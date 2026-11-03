@@ -45,10 +45,17 @@ export function pgDb(pool: pg.Pool): Db {
 const legacyMigration = '202610270001_admin.sql';
 const legacyChecksum = 'c00208a781b81c0fd1a00874ab7d76042d9221719cc71240f03e2e0fe611a733';
 const migrationsDir = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'migrations');
+const migrationAssets = [
+  new URL('../migrations/001_init.sql', import.meta.url),
+  new URL('../migrations/002_unassigned_crew.sql', import.meta.url),
+];
 
 /** Read-only lineage check; never adopt an older hosted schema as this backend's baseline. */
 export async function checkMigrations(db: Db) {
   const files = (await readdir(migrationsDir)).filter(f => f.endsWith('.sql')).sort();
+  if (migrationAssets.map(url => path.basename(fileURLToPath(url))).sort().join(',') !== files.join(',')) {
+    throw new Error('Migration asset manifest differs from migrations/. Update src/db.ts before deploying new migrations.');
+  }
   const relations = (await db.query<{ schema: string; name: string; kind: string }>(`
     select n.nspname as schema, c.relname as name, c.relkind as kind
     from pg_class c join pg_namespace n on n.oid = c.relnamespace
@@ -93,7 +100,7 @@ export async function checkMigrations(db: Db) {
     if (history.length !== 1 || history[0].name !== legacyMigration || history[0].checksum !== legacyChecksum) {
       fail('legacy migration history differs from the recovered source');
     }
-    const original = await readFile(new URL(`../legacy/${legacyMigration}`, import.meta.url));
+    const original = await readFile(new URL('../legacy/202610270001_admin.sql', import.meta.url));
     if (createHash('sha256').update(original).digest('hex') !== legacyChecksum) fail('the recovered migration bytes were changed');
   }
   return { files, done };
