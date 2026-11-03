@@ -1,0 +1,226 @@
+import 'dart:math' as math;
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'app/locale.dart';
+import 'app/theme.dart';
+import 'core/api.dart';
+import 'features/screens.dart';
+import 'l10n/l10n.dart';
+
+final navigatorKey = GlobalKey<NavigatorState>();
+
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await SystemChrome.setPreferredOrientations([
+    DeviceOrientation.portraitUp,
+    DeviceOrientation.portraitDown,
+  ]);
+  final prefs = await SharedPreferences.getInstance();
+  store.showUnread = prefs.getBool('maintenance-notifications') ?? true;
+  await themeController.load();
+  await localeController.load();
+  runApp(const PatagMaintenanceApp());
+}
+
+class PatagMaintenanceApp extends StatelessWidget {
+  const PatagMaintenanceApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    // An expired session (401) returns to sign-in from wherever the user is.
+    store.onSessionExpired ??= () => navigatorKey.currentState
+        ?.pushNamedAndRemoveUntil('/login', (_) => false);
+    return AnimatedBuilder(
+      animation: Listenable.merge([store, themeController, localeController]),
+      builder: (context, _) => MaterialApp(
+        onGenerateTitle: (context) => context.l10n.appTitle,
+        // The crew's choice (Tagalog by default), never the phone's language.
+        locale: localeController.locale,
+        supportedLocales: AppLocalizations.supportedLocales,
+        localizationsDelegates: const [
+          AppLocalizations.delegate,
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+        navigatorKey: navigatorKey,
+        debugShowCheckedModeBanner: false,
+        theme: patagMaintenanceTheme(),
+        darkTheme: patagMaintenanceTheme(brightness: Brightness.dark),
+        themeMode: themeController.mode,
+        themeAnimationDuration: PatagTokens.motion,
+        initialRoute: '/',
+        builder: (context, child) {
+          final dark = Theme.of(context).brightness == Brightness.dark;
+          final size = MediaQuery.of(context).size;
+          final isWide = size.width > 500;
+
+          if (!isWide) {
+            return child ?? const SizedBox();
+          }
+
+          // Portrait mobile device frame for desktop/wide browser preview
+          final frameHeight =
+              math.min(890.0, math.max(680.0, size.height - 36.0));
+          return Container(
+            color: dark ? const Color(0xFF090B0E) : const Color(0xFFE4DFD7),
+            alignment: Alignment.center,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                // Top device frame badge
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 10),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        width: 8,
+                        height: 8,
+                        decoration: const BoxDecoration(
+                          color: orange,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        context.l10n.devicePreviewLabel,
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color:
+                              dark ? Colors.white70 : const Color(0xFF4A4E57),
+                          letterSpacing: 0.3,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                // Phone container
+                Container(
+                  width: 412,
+                  height: frameHeight,
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).scaffoldBackgroundColor,
+                    borderRadius: BorderRadius.circular(44),
+                    border: Border.all(
+                      color: dark
+                          ? const Color(0xFF2B303C)
+                          : const Color(0xFFD4CDC4),
+                      width: 8,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.42),
+                        blurRadius: 40,
+                        spreadRadius: 2,
+                        offset: const Offset(0, 16),
+                      ),
+                    ],
+                  ),
+                  clipBehavior: Clip.antiAlias,
+                  child: Stack(
+                    children: [
+                      Positioned.fill(child: child ?? const SizedBox()),
+                      // Dynamic Island / Phone top speaker notch
+                      Align(
+                        alignment: Alignment.topCenter,
+                        child: Container(
+                          margin: const EdgeInsets.only(top: 8),
+                          width: 110,
+                          height: 24,
+                          decoration: BoxDecoration(
+                            color: Colors.black.withOpacity(0.9),
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Container(
+                                width: 8,
+                                height: 8,
+                                decoration: const BoxDecoration(
+                                  color: Color(0xFF1E293B),
+                                  shape: BoxShape.circle,
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Container(
+                                width: 5,
+                                height: 5,
+                                decoration: const BoxDecoration(
+                                  color: Color(0xFF0F172A),
+                                  shape: BoxShape.circle,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+        onGenerateRoute: (settings) {
+          final route = settings.name ?? '/';
+          final parts = route.split('/');
+          // A builder, not a widget: every store change must build a fresh screen
+          // (returning the same instance makes Flutter skip the rebuild).
+          late Widget Function() screen;
+
+          final protected = route == '/dashboard' ||
+              route.startsWith('/assignments') ||
+              route == '/map' ||
+              route == '/progress' ||
+              route.startsWith('/repairs') ||
+              route == '/notifications' ||
+              route == '/profile';
+
+          if (protected && store.token == null) {
+            screen = () => MaintenanceLogin();
+          } else if (route == '/') {
+            screen = () => MaintenanceSplash();
+          } else if (route == '/welcome') {
+            screen = () => MaintenanceWelcome();
+          } else if (route == '/login') {
+            screen = () => MaintenanceLogin();
+          } else if (route == '/dashboard') {
+            screen = () => MainShell(initialTab: 0);
+          } else if (route == '/assignments') {
+            screen = () => MainShell(initialTab: 1);
+          } else if (route.startsWith('/assignments/')) {
+            screen = () => TaskDetailsScreen(parts.last);
+          } else if (route == '/progress') {
+            screen = () => MainShell(initialTab: 2);
+          } else if (route == '/map') {
+            screen = () => MainShell(initialTab: 3);
+          } else if (route.startsWith('/repairs/') &&
+              parts.last == 'document') {
+            screen = () => RepairDocumentationScreen(parts[2]);
+          } else if (route.startsWith('/repairs/') && parts.last == 'success') {
+            screen = () => SubmissionSuccessScreen(parts[2]);
+          } else if (route == '/notifications') {
+            screen = () => NotificationsScreen();
+          } else if (route == '/profile') {
+            screen = () => MainShell(initialTab: 4);
+          } else {
+            screen = () => MainShell(initialTab: 0);
+          }
+
+          return MaterialPageRoute<void>(
+            settings: settings,
+            builder: (_) => ListenableBuilder(
+              listenable: store,
+              builder: (_, __) => screen(),
+            ),
+          );
+        },
+      ),
+    );
+  }
+}

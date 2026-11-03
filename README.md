@@ -2,7 +2,9 @@
 
 Pa-tag lubak, lubak patag.
 
-Academic IT 305 project: a native Flutter citizen application and two independent React/TypeScript/Vite portals for LGU review and road maintenance. Source covers all 55 expanded route entries. Both web portals build and pass a tested cross-role demonstration. Flutter analysis and all 13 tests pass. The Android debug APK builds; emulator inspection remains blocked by the missing hypervisor driver. This is not a production-ready system.
+Academic IT 305 project: a native Flutter citizen application and two independent React/TypeScript/Vite portals for LGU review and road maintenance. Source covers all 55 expanded route entries. Both web portals build and pass a tested cross-role demonstration. Flutter analysis and all 26 tests pass. The Android debug APK builds; emulator inspection remains blocked by the missing hypervisor driver. This is not a production-ready system.
+
+See the [24 October PDF requirements and UX audit](docs/project2-audit/audit.md) for requirement coverage, corrections, and outstanding acceptance gates.
 
 ## Structure
 
@@ -17,15 +19,17 @@ docs/               Compliance matrix, 55 routes, contract, design and QA
 
 Use fictional accounts/data only. There are no real LGU partnerships, repair records or official statistics. The mock service must not be exposed publicly. It supports cross-process state through HTTP and local JSON, not shared localStorage.
 
+See the [connected preview controls and walkthrough](docs/preview-completion/README.md) for citizen accounts, team/staff management, shared settings and photo approval.
+
 ## Open the interactive preview
 
 Open [preview/Open-PATAG.html](preview/Open-PATAG.html) directly in Chrome or Edge. Choose Citizen, LGU / Admin or Maintenance. No local server is needed. This is a functioning demo with fictional browser-local data, not a screenshot gallery. The citizen preview is a separate approved browser demo; the native application remains Flutter. Map tiles require internet.
 
-Rebuild with `npm run build:preview` after installing dependencies in both web folders. See [redesign validation](docs/redesign-validation.md), [design audit](docs/ui-redesign-audit.md) and [design system](docs/design-system.md).
+Rebuild with `npm run build:preview` after installing dependencies in both web folders. See [23 October visual-system validation](docs/visual-system/validation.md), [previous redesign validation](docs/redesign-validation.md), [design audit](docs/ui-redesign-audit.md) and [design system](docs/design-system.md).
 
 ## Prerequisites and observed environment
 
-Node 24, npm 11, Flutter 3.47.6 and Dart 3.13.5 were used. Both web builds, API tests, Flutter analysis and all 13 Flutter tests passed. The Android SDK and an existing AVD were found. The Android debug APK build succeeded. The existing AVD cannot start because its hypervisor driver is missing; native emulator validation remains outstanding. Earlier sandbox Dart errors were resolved by running authorized tooling outside that sandbox.
+Node 24, npm 11, Flutter 3.47.6 and Dart 3.13.5 were used. Both web builds, API tests, Flutter analysis and all 26 Flutter tests passed. The Android SDK and an existing AVD were found. The Android debug APK build succeeded. The existing AVD cannot start because its hypervisor driver is missing; native emulator validation remains outstanding. Earlier sandbox Dart errors were resolved by running authorized tooling outside that sandbox.
 
 ## Run locally (PowerShell)
 
@@ -45,7 +49,7 @@ npm install
 npm run dev
 ```
 
-Open http://127.0.0.1:5173/admin/login and choose **Continue as LGU administrator**.
+Open http://127.0.0.1:5173/admin/login and sign in using a provisioned administrator email and password.
 
 Maintenance tab:
 
@@ -55,9 +59,9 @@ npm install
 npm run dev
 ```
 
-Open http://127.0.0.1:5174/maintenance/login and choose **Continue as Road Crew Alpha**. Seeded accounts use demo access, not invented passwords. New citizen accounts can register with hashed passwords on the local API.
+Open http://127.0.0.1:5174/maintenance/login and sign in using a provisioned maintenance account. Seeded accounts have no usable sign-in until a password is provisioned. New citizen accounts can register with hashed passwords on the local API.
 
-Native citizen app, after toolchain repair:
+Native citizen app:
 
 ```powershell
 cd citizen-mobile
@@ -75,7 +79,7 @@ Each web folder includes `.env.example`; copy to `.env.local` only when overridi
 
 ## Demonstrate the workflow
 
-1. Citizen: demo access or register → report → upload photo → GPS/manual location → description/severity → duplicate review → submit.
+1. Citizen: sign in or register → report → upload photo → GPS/manual location → description/severity → duplicate review → submit.
 2. LGU: verification queue → inspect evidence/location → verify → assign a crew.
 3. Maintenance: assignment → start → progress → repair documentation → after photo/notes → submit for administrative verification.
 4. LGU: repair verification → compare evidence → resolve or request additional work.
@@ -115,3 +119,5 @@ git push -u origin main
 ```
 
 Check for an existing repository before running create. If one exists, add its verified remote instead. No secrets, `.env` files, build outputs, node_modules or local demo records are tracked.
+
+Current account journey: [login, registration and logout](docs/auth-flow/README.md). Open the web preview at `http://127.0.0.1:8080/#/citizen/login`.

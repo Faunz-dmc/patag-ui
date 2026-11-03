@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {createServer} from './server.mjs';
+import {createTestServer as createServer, TEST_PASSWORD, testEmail} from './test-fixture.mjs';
 import {transition,seed,candidates} from './domain.mjs';
 test('role transitions and duplicate suggestions preserve workflow',()=>{
  const db=seed(),r=db.reports[0];assert.ok(candidates(db.reports,db.reports[4]).length);
@@ -19,7 +19,7 @@ test('HTTP cross-role flow, evidence validation, privacy, ownership, feedback an
  async function call(path,body,token,method){const res=await fetch(base+path,{method:method||(body?'POST':'GET'),headers:{'Content-Type':'application/json',...(token?{Authorization:'Bearer '+token}:{})},body:body?JSON.stringify(body):undefined});return {status:res.status,data:await res.json()};}
  try{
   assert.equal((await call('/bootstrap')).status,401);
-  const citizen=(await call('/auth/demo',{role:'citizen'})).data.token,admin=(await call('/auth/demo',{role:'admin'})).data.token,crew=(await call('/auth/demo',{role:'maintenance'})).data.token;
+  const citizen=(await call('/auth/login',{role:'citizen',email:testEmail('citizen'),password:TEST_PASSWORD})).data.token,admin=(await call('/auth/login',{role:'admin',email:testEmail('admin'),password:TEST_PASSWORD})).data.token,crew=(await call('/auth/login',{role:'maintenance',email:testEmail('maintenance'),password:TEST_PASSWORD})).data.token;
   assert.equal((await call('/uploads',{data:'data:image/png;base64,dGhpcyBpcyBub3QgYSBwbmc=',name:'invalid.png'},citizen)).status,400);
   const photo=(await call('/uploads',{name:'test-evidence.png',data:'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII='},citizen)).data;
   const input={title:'Workflow test pothole',description:'Damaged outer lane',severity:'High',photos:[photo],location:{road:'Test Road',barangay:'Guinhawa',city:'Malolos',province:'Bulacan',landmark:'Test waiting shed',coordinates:{lat:14.85,lng:120.81}}};
@@ -30,6 +30,8 @@ test('HTTP cross-role flow, evidence validation, privacy, ownership, feedback an
   assert.equal((await event('assign',{teamId:'team-1'})).status,409);
   assert.equal((await event('verify')).data.status,'Verified');await event('assign',{teamId:'team-1',note:'Inspect the outer lane'});
   assert.ok((await call('/bootstrap',undefined,crew)).data.reports.some(r=>r.id===id));
+  const beforeCount=created.data.photos.length;
+  const before=await event('before-photos',{photos:[photo]},crew);assert.equal(before.status,200);assert.equal(before.data.photos.length,beforeCount+1);assert.equal(before.data.status,'Assigned');
   await event('start',{},crew);await event('progress',{note:'Site prepared'},crew);
   assert.equal((await event('resolve',{},crew)).status,409);
   assert.equal((await event('complete',{note:'Repaired'},crew)).status,400);

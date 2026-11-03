@@ -1,0 +1,49 @@
+import { PGlite, type Transaction } from '@electric-sql/pglite';
+import { buildApp } from '../src/http-app.ts';
+import { MemoryBlobStore } from '../src/blobs.ts';
+import type { ReverseGeocode } from '../src/geocode.ts';
+import { migrate, type Db } from '../src/db.ts';
+import { seedAll } from '../src/seed.ts';
+import { Store } from '../src/store.ts';
+import { hashPassword } from '../src/passwords.ts';
+export const TEST_PASSWORD = 'Synthetic fixture password 42!';
+
+// Real Postgres (WASM) so the migrations and every SQL statement are exercised.
+function pgliteDb(pg: PGlite): Db {
+  const wrap = (q: PGlite | Transaction): Db => ({
+    query: (sql, params) => q.query(sql, params) as any,
+    exec: async sql => { await q.exec(sql); },
+    tx: fn => (q === pg ? pg.transaction(t => fn(wrap(t))) : fn(wrap(q))),
+    close: () => pg.close(),
+  });
+  return wrap(pg);
+}
+
+export async function startServer({ allowDemo = true, bodyLimit = undefined as number | undefined, trustProxy = false as boolean | number, geocode = undefined as ReverseGeocode | undefined, corsOrigins = ["http://127.0.0.1:5173"] } = {}) {
+  const db = pgliteDb(await PGlite.create());
+  await migrate(db);
+  const store = new Store(db);
+  await seedAll(store);
+  const passwordHash = await hashPassword(TEST_PASSWORD);
+  for (const user of await store.listUsers()) await store.updateUser({ ...user, passwordHash });
+  const app = buildApp({ store, blobs: new MemoryBlobStore(), allowDemo, bodyLimit, trustProxy, geocode, corsOrigins });
+  await app.listen({ port: 0, host: '127.0.0.1' });
+  const address = app.server.address() as { port: number };
+  const base = `http://127.0.0.1:${address.port}/api`;
+  async function call(path: string, body?: unknown, token?: string, method?: string) {
+    const res = await fetch(base + path, {
+      method: method || (body ? 'POST' : 'GET'),
+      headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+      body: body ? JSON.stringify(body) : undefined,
+    });
+    return { status: res.status, data: (await res.json()) as any, headers: res.headers };
+  }
+  async function login(role: string) {
+    const user = (await store.listUsers()).find(u => u.role === role);
+    if (!user) throw Error('Missing fixture user');
+    return call('/auth/login', { email: user.email, password: TEST_PASSWORD, role });
+  }
+  return { base, call, login, store, close: async () => { await app.close(); await db.close(); } };
+}
+
+export const PNG = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=';

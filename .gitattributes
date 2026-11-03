@@ -13,3 +13,6 @@
 *.md text eol=lf
 **/gradlew text eol=lf
 *.bat text eol=crlf
+
+# Preserve the exact bytes used by the historical checksum ledger.
+backend/legacy/202610270001_admin.sql -text

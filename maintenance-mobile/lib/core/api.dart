@@ -1,0 +1,316 @@
+import 'dart:convert';
+import 'dart:async';
+import 'package:flutter/foundation.dart';
+import 'package:http/http.dart' as http;
+import 'package:image_picker/image_picker.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'errors.dart';
+import 'models.dart';
+
+export 'errors.dart';
+
+/// Talks to the shared PATAG API (see docs/api-contract.md). The server is the
+/// source of truth: local state only changes after a successful response.
+class PatagMaintenanceStore extends ChangeNotifier {
+  PatagMaintenanceStore({http.Client? client})
+      : client = client ?? http.Client();
+
+  static String get baseUrl {
+    if (kIsWeb) return 'http://127.0.0.1:4100/api';
+    return const String.fromEnvironment(
+      'API_URL',
+      defaultValue: 'http://10.0.2.2:4100/api',
+    );
+  }
+
+  /// Replaceable in tests.
+  http.Client client;
+
+  /// Called after the server rejects the session (401), e.g. to open the login screen.
+  VoidCallback? onSessionExpired;
+
+  String? token;
+  User? user;
+  Team? team;
+  List<PotholeReport> reports = [];
+  List<Notice> notifications = [];
+  Timer? timer;
+
+  /// Last failed refresh; shown (translated) by the screen banner.
+  Object? networkError;
+  bool showUnread = true;
+
+  /// Result of the last GET /health; null while reachable or not yet checked.
+  PatagException? serverProblem;
+  bool checkingServer = false;
+  int _serverCheck = 0;
+
+  /// Checks that the backend answers. Waits up to 60 s so a hosted server
+  /// that went to sleep has time to wake up. Only the newest check may
+  /// update the result when several screens check at once.
+  Future<bool> checkServer() async {
+    final check = ++_serverCheck;
+    checkingServer = true;
+    serverProblem = null;
+    notifyListeners();
+    var ok = false;
+    try {
+      final response = await client
+          .get(Uri.parse('$baseUrl/health'))
+          .timeout(const Duration(seconds: 60));
+      ok = response.statusCode == 200;
+    } catch (_) {
+      ok = false;
+    }
+    if (check == _serverCheck) {
+      checkingServer = false;
+      serverProblem =
+          ok ? null : const PatagException(PatagErrorKind.serverDown);
+      notifyListeners();
+    }
+    return ok;
+  }
+
+  void setUnreadPreference(bool value) {
+    showUnread = value;
+    notifyListeners();
+    SharedPreferences.getInstance()
+        .then((p) => p.setBool('maintenance-notifications', value))
+        .catchError((Object _) => false);
+  }
+
+  List<PotholeReport> get myAssignments => reports.where((r) {
+        if (team != null && r.teamId == team!.id) return true;
+        return ['Assigned', 'In Progress', 'Resolved'].contains(r.status);
+      }).toList();
+
+  List<PotholeReport> get activeWork => myAssignments
+      .where((r) =>
+          r.status == 'In Progress' &&
+          r.completion?.state != 'Awaiting Verification')
+      .toList();
+
+  List<PotholeReport> get newAssignments =>
+      myAssignments.where((r) => r.status == 'Assigned').toList();
+
+  List<PotholeReport> get submissions => myAssignments
+      .where((r) =>
+          r.completion != null &&
+          r.completion!.state == 'Awaiting Verification')
+      .toList();
+
+  List<PotholeReport> get completedHistory =>
+      myAssignments.where((r) => r.status == 'Resolved').toList();
+
+  PotholeReport? getReportById(String id) {
+    try {
+      return reports.firstWhere((r) => r.id == id);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// Full URL for a photo path returned by the API (e.g. `/uploads/<uuid>.jpg`).
+  static String photoUrl(String path) =>
+      '${baseUrl.replaceFirst(RegExp(r'/api$'), '')}/api$path';
+
+  Future<dynamic> call(
+    String path, {
+    Map<String, dynamic>? body,
+    String? method,
+  }) async {
+    final uri = Uri.parse('$baseUrl$path');
+    final sentWith = token;
+    final headers = {
+      'Content-Type': 'application/json',
+      if (sentWith != null) 'Authorization': 'Bearer $sentWith',
+    };
+    // Photos are sent as base64 (up to ~4.2 MB), so allow time on mobile data.
+    const timeout = Duration(seconds: 20);
+    http.Response response;
+    try {
+      if (method == 'PATCH') {
+        response = await client
+            .patch(uri, headers: headers, body: jsonEncode(body))
+            .timeout(timeout);
+      } else if (body == null) {
+        response = await client.get(uri, headers: headers).timeout(timeout);
+      } else {
+        response = await client
+            .post(uri, headers: headers, body: jsonEncode(body))
+            .timeout(timeout);
+      }
+    } on TimeoutException {
+      throw const PatagException(PatagErrorKind.timeout);
+    } catch (_) {
+      throw const PatagException(PatagErrorKind.unreachable);
+    }
+
+    dynamic data;
+    try {
+      data = jsonDecode(response.body);
+    } catch (_) {
+      // e.g. an HTML 502 page while a hosted server is starting.
+      throw PatagException(
+        response.statusCode >= 500
+            ? PatagErrorKind.serverUnavailable
+            : PatagErrorKind.unexpectedResponse,
+        statusCode: response.statusCode,
+      );
+    }
+    if (response.statusCode >= 400) {
+      // Only expire the session this request was made with (not a newer login).
+      if (response.statusCode == 401 && sentWith != null && sentWith == token) {
+        _clearSession();
+        onSessionExpired?.call();
+      }
+      final error = data is Map ? data['error'] : null;
+      throw error is String && error.trim().isNotEmpty
+          ? PatagException(PatagErrorKind.server,
+              statusCode: response.statusCode, serverMessage: error)
+          : PatagException(PatagErrorKind.requestFailed,
+              statusCode: response.statusCode);
+    }
+    return data;
+  }
+
+  Future<void> authenticate(String email, String password) async {
+    final data = await call('/auth/login', body: {
+      'email': email,
+      'password': password,
+      'role': 'maintenance',
+    });
+    await _startSession(data);
+  }
+
+  Future<void> _startSession(dynamic data) async {
+    if (data['user']?['role'] != 'maintenance') {
+      throw const PatagException(PatagErrorKind.notMaintenance);
+    }
+    token = data['token'] as String;
+    user = User.fromJson(Map<String, dynamic>.from(data['user']));
+    startPolling();
+    // A failed first load shows as networkError and is retried by polling,
+    // instead of reporting the sign-in itself as failed.
+    await refresh().catchError((Object _) {});
+  }
+
+  void startPolling() {
+    timer?.cancel();
+    timer = Timer.periodic(const Duration(seconds: 8), (_) {
+      refresh().catchError((Object _) {});
+    });
+  }
+
+  bool _refreshing = false;
+  Future<void> refresh() async {
+    final sessionToken = token;
+    if (sessionToken == null || _refreshing) return;
+    _refreshing = true;
+    try {
+      final data = await call('/bootstrap');
+      // Signed out or switched accounts while waiting: drop the old answer.
+      if (token != sessionToken) return;
+      reports = (data['reports'] as List? ?? [])
+          .map((r) => PotholeReport(Map<String, dynamic>.from(r)))
+          .toList();
+      notifications = (data['notifications'] as List? ?? [])
+          .map((n) => Notice.fromJson(Map<String, dynamic>.from(n)))
+          .toList();
+      user = User.fromJson(Map<String, dynamic>.from(data['user']));
+      final teams = (data['teams'] as List? ?? [])
+          .map((t) => Team.fromJson(Map<String, dynamic>.from(t)))
+          .toList();
+      team = teams.where((t) => t.id == user?.teamId).firstOrNull;
+      networkError = null;
+      notifyListeners();
+    } catch (e) {
+      if (token == sessionToken) {
+        networkError = e;
+        notifyListeners();
+      }
+      rethrow;
+    } finally {
+      _refreshing = false;
+    }
+  }
+
+  /// Sends a workflow action (start, before-photos, progress, complete) and
+  /// reloads from the server. Throws the server's message on failure; local
+  /// state is left unchanged.
+  Future<void> event(
+    String reportId,
+    String action, {
+    Map<String, dynamic>? payload,
+  }) async {
+    await call(
+      '/reports/$reportId/events',
+      body: {'action': action, if (payload != null) ...payload},
+    );
+    await refresh();
+  }
+
+  Future<void> markRead(String id) async {
+    await call('/notifications/read', body: {'id': id});
+    await refresh();
+  }
+
+  /// Photos are shrunk when picked (longest side, JPEG quality) so a normal
+  /// phone photo lands well under the 3 MB upload limit.
+  static const photoMaxSide = 1920.0;
+  static const photoQuality = 80;
+
+  Future<Map<String, dynamic>> upload(XFile file,
+      {String kind = 'after'}) async {
+    final bytes = await file.readAsBytes();
+    if (bytes.length > 3 * 1024 * 1024) {
+      throw const PatagException(PatagErrorKind.photoTooLarge);
+    }
+    final name = file.name.toLowerCase();
+    final type = name.endsWith('.png')
+        ? 'png'
+        : name.endsWith('.webp')
+            ? 'webp'
+            : (name.endsWith('.jpg') || name.endsWith('.jpeg'))
+                ? 'jpeg'
+                : null;
+    if (type == null) {
+      throw const PatagException(PatagErrorKind.photoType);
+    }
+    final res = await call('/uploads', body: {
+      'data': 'data:image/$type;base64,${base64Encode(bytes)}',
+      'name': file.name,
+      'kind': kind,
+    });
+    return Map<String, dynamic>.from(res);
+  }
+
+  void _clearSession() {
+    token = null;
+    user = null;
+    team = null;
+    reports = [];
+    notifications = [];
+    timer?.cancel();
+    notifyListeners();
+  }
+
+  Future<void> logout() async {
+    try {
+      await call('/auth/logout', body: {});
+    } catch (_) {}
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('patag-maintenance-draft');
+    _clearSession();
+  }
+
+  static String clean(Object e) => e.toString().replaceFirst('Exception: ', '');
+
+  @override
+  void dispose() {
+    timer?.cancel();
+    super.dispose();
+  }
+}
+
+final store = PatagMaintenanceStore();

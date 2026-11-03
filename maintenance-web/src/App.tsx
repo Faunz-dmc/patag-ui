@@ -1,4 +1,5 @@
 import {
+  Fragment,
   createContext,
   useCallback,
   useContext,
@@ -23,6 +24,8 @@ import {
   ArrowRight,
   ArrowLeft,
   Bell,
+  Sun,
+  Moon,
   MapPin,
   LayoutDashboard,
   ClipboardList,
@@ -46,6 +49,8 @@ import {
   Clock,
   FileCheck,
   Copy,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 import {
   MapContainer,
@@ -63,13 +68,16 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
-import type { Bootstrap, Report, Photo, User } from "./types";
+import type { Bootstrap, Report, Photo, User, Team } from "./types";
 import { statuses } from "./types";
 import { request, asset, upload } from "./api";
 import { role } from "./config";
 import "leaflet/dist/leaflet.css";
 import "./styles/app.css";
 import "./styles/premium.css";
+import "./styles/visual-system.css";
+import "./styles/login-redesign.css";
+import { useTheme } from "./theme";
 
 const admin = role === "admin",
   base = admin ? "/admin" : "/maintenance";
@@ -114,6 +122,25 @@ const date = (v: string) =>
     day: "numeric",
     year: "numeric",
   });
+// Local YYYY-MM-DD: filters and exports must use the same day the screen shows (UTC+8, not UTC).
+const localDay = (v: string | Date) => new Date(v).toLocaleDateString("en-CA");
+const dateTime = (v: string) =>
+  new Date(v).toLocaleString("en-PH", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
+const roleLabels: Record<string, string> = {
+  admin: "LGU administrator",
+  maintenance: "Road crew",
+  citizen: "Citizen",
+};
+const actorLabel = (h: { actor: string; actorName?: string }) => {
+  const role = roleLabels[h.actor] || h.actor;
+  return h.actorName ? `${h.actorName} (${role})` : role;
+};
 function Badge({ value }: { value: string }) {
   return (
     <span className={"badge " + value.toLowerCase().replaceAll(" ", "-")}>
@@ -148,12 +175,13 @@ function Header({
   description?: string;
   action?: ReactNode;
 }) {
+  const workspace = useContext(Context)?.data;
   return (
     <header className="page-heading">
       <div>
         <p className="scope">
-          {admin ? "LGU operations" : "Road Crew Alpha"}{" "}
-          <ChevronRight size={13} /> Malolos, Bulacan
+          {admin ? "LGU operations" : workspace?.teams.find(t=>t.id===workspace.user.teamId)?.name || "Maintenance"}{" "}
+          <ChevronRight size={13} /> {workspace?.settings?.city || "Malolos"}, {workspace?.settings?.province || "Bulacan"}
         </p>
         <h1>{title}</h1>
         {description && <p>{description}</p>}
@@ -200,14 +228,14 @@ function Modal({
   return (
     <dialog
       ref={ref}
-      onCancel={close}
-      onClick={(e) => {
-        if (e.target === ref.current) close();
+      onCancel={(e) => {
+        e.preventDefault();
       }}
     >
       <header>
         <h2>{title}</h2>
         <button
+          type="button"
           className="icon-button"
           aria-label="Close dialog"
           onClick={close}
@@ -251,6 +279,7 @@ function Login() {
   const [error, setError] = useState(""),
     [loading, setLoading] = useState(false),
     [recovery, setRecovery] = useState(false),
+    [showPassword, setShowPassword] = useState(false),
     [message, setMessage] = useState("");
   const run = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -267,6 +296,7 @@ function Login() {
         const r = await request<{ token: string; user: User }>("/auth/login", {
           email: f.get("email"),
           password: f.get("password"),
+          role,
         });
         if (r.user.role !== role)
           throw Error("This account belongs to a different portal.");
@@ -279,118 +309,129 @@ function Login() {
       setLoading(false);
     }
   };
-  async function demo() {
-    setLoading(true);
-    try {
-      const r = await request<{ token: string }>("/auth/demo", { role });
-      sessionStorage.setItem("patag-token", r.token);
-      nav(base + "/dashboard");
-    } catch (e) {
-      setError((e as Error).message);
-    } finally {
-      setLoading(false);
-    }
-  }
   return (
     <main className="login">
-      <section className="login-story">
-        <Logo />
-        <div>
-          <p>Pa-tag lubak, lubak patag.</p>
-          <h1>
-            Better roads.
-            <br />
-            Built together.
-          </h1>
-          <p>
-            {admin
-              ? "Turn community reports into coordinated action."
-              : "One repair at a time. Make the way safer for everyone."}
+      <div className="login-card">
+        <section className="login-story">
+          <div className="login-story-top">
+            <Logo />
+          </div>
+          <div className="login-story-body">
+            <h1>
+              {admin ? "Better roads." : "Safer roads start here."}
+              <br />
+              {admin ? "Built together." : ""}
+            </h1>
+            <p className="login-story-desc">
+              {admin
+                ? "Turn community reports into coordinated municipal action."
+                : "Report clearly. Track progress. See the repair through."}
+            </p>
+          </div>
+          <small className="login-story-footer">
+            IT 305 · Bulacan State University · Academic demonstration
+          </small>
+        </section>
+        <section className="login-form">
+          <div className="login-accent-mark" aria-hidden="true">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round">
+              <line x1="12" y1="2" x2="12" y2="22" />
+              <line x1="2" y1="12" x2="22" y2="12" />
+              <line x1="4.93" y1="4.93" x2="19.07" y2="19.07" />
+              <line x1="19.07" y1="4.93" x2="4.93" y2="19.07" />
+            </svg>
+          </div>
+          <span className="pill-label">
+            {admin ? "LGU administrator" : "Citizen account"}
+          </span>
+          <h2>{recovery ? "Recover access" : (admin ? "Welcome to LGU Portal" : "Welcome back")}</h2>
+          <p className="login-subtitle">
+            {recovery
+              ? "Request a password reset for your staff account."
+              : (admin
+                  ? "Access your tasks, reports, and teams anytime, anywhere — all in one place."
+                  : "Sign in to report a pothole and follow its repair.")}
           </p>
-          <img src="/assets/patag-mascot.png" alt="PATAG traffic cone mascot" />
-        </div>
-        <small>
-          IT 305 · Bulacan State University · Academic demonstration
-        </small>
-      </section>
-      <section className="login-form">
-        <span className="pill-label">
-          {admin ? "LGU administrator" : "Road maintenance"}
-        </span>
-        <h2>{recovery ? "Recover access" : "A clearer road ahead."}</h2>
-        <p>
-          {recovery
-            ? "Request a password reset."
-            : "Sign in to your PATAG workspace."}
-        </p>
-        <form onSubmit={run}>
-          <label>
-            Email address
-            <input
-              name="email"
-              type="email"
-              autoComplete="email"
-              required
-              placeholder="you@example.test"
-            />
-          </label>
-          {!recovery && (
+          <form onSubmit={run}>
             <label>
-              Password
+              Email address
               <input
-                name="password"
-                type="password"
-                autoComplete="current-password"
+                name="email"
+                type="email"
+                autoComplete="email"
                 required
-                minLength={8}
-                placeholder="Enter your password"
+                placeholder="crew@malolos.gov.ph"
+                defaultValue={admin ? "admin@malolos.gov.ph" : "crew@malolos.gov.ph"}
               />
             </label>
-          )}
-          {error && (
-            <p role="alert" className="error">
-              {error}
-            </p>
-          )}
-          {message && <p role="status">{message}</p>}
-          <button className="primary" disabled={loading}>
-            {loading
-              ? "Connecting…"
-              : recovery
-                ? "Request recovery"
-                : "Sign in"}
-            <ArrowRight size={16} />
+            {!recovery && (
+              <label className="password-label">
+                Password
+                <div className="password-wrap">
+                  <input
+                    name="password"
+                    type={showPassword ? "text" : "password"}
+                    autoComplete="current-password"
+                    required
+                    minLength={1}
+                    placeholder="Enter your password"
+                  />
+                  <button
+                    type="button"
+                    className="password-toggle-btn"
+                  onMouseDown={(e) => e.preventDefault()}
+                    aria-label={showPassword ? "Hide password" : "Show password"}
+                    aria-pressed={showPassword}
+                    onClick={() => setShowPassword(!showPassword)}
+                  >
+                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+                </div>
+              </label>
+            )}
+            {error && (
+              <p role="alert" className="error">
+                {error}
+              </p>
+            )}
+            {message && <p role="status">{message}</p>}
+            <button className="primary submit-btn" disabled={loading}>
+              {loading
+                ? "Connecting…"
+                : recovery
+                  ? "Request recovery"
+                  : "Log in"}
+              <ArrowRight size={16} />
+            </button>
+          </form>
+          <button
+            className="text-button forgot-btn"
+            onClick={() => {
+              setRecovery(!recovery);
+              setMessage("");
+            }}
+          >
+            {recovery ? "Back to sign in" : "Forgot password?"}
           </button>
-        </form>
-        <button
-          className="text-button"
-          onClick={() => {
-            setRecovery(!recovery);
-            setMessage("");
-          }}
-        >
-          {recovery ? "Back to sign in" : "Forgot password?"}
-        </button>
-        <div className="demo-access">
-          <strong>Explore the working demo</strong>
-          <p>
-            Fictional reports, local API, and role-based workflows. No official
-            LGU records.
-          </p>
-          <button onClick={demo} disabled={loading}>
-            Continue as {admin ? "LGU administrator" : "Road Crew Alpha"}
-            <ArrowUpRight size={16} />
-          </button>
-        </div>
-      </section>
+          <p className="login-footnote">Staff accounts are provided by an authorized administrator. Contact your administrator if you need access.</p>
+        </section>
+      </div>
     </main>
   );
 }
 function Shell() {
+  const { theme, toggleTheme } = useTheme();
+  const [isMobile, setIsMobile] = useState(() => window.innerWidth < 1024);
+  useEffect(() => {
+    const query = window.matchMedia("(max-width: 1023px)");
+    const update = () => setIsMobile(query.matches);
+    query.addEventListener("change", update);
+    return () => query.removeEventListener("change", update);
+  }, []);
   const [data, setData] = useState<Bootstrap | null>(null),
     [error, setError] = useState(""),
     [toast, setToast] = useState(""),
-    [menu, setMenu] = useState(false);
+    [menu, setMenu] = useState(() => window.innerWidth >= 1024 && localStorage.getItem("patag-sidebar") !== "collapsed");
   const loc = useLocation(),
     nav = useNavigate();
   const refresh = useCallback(async () => {
@@ -422,9 +463,28 @@ function Shell() {
     return () => clearInterval(t);
   }, [nav, refresh]);
   useEffect(() => {
-    setMenu(false);
+    if (window.innerWidth < 1024) setMenu(false);
     window.scrollTo(0, 0);
   }, [loc.pathname]);
+  useEffect(() => {
+    if (!menu || !isMobile) return;
+    const drawer = document.getElementById("workspace-navigation");
+    const previous = document.activeElement as HTMLElement | null;
+    const controls = () => Array.from(drawer?.querySelectorAll<HTMLElement>('a, button') ?? []);
+    controls()[0]?.focus();
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") { e.preventDefault(); setMenu(false); }
+      if (e.key === "Tab") {
+        const items = controls(), first = items[0], last = items[items.length - 1];
+        if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last?.focus(); }
+        if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first?.focus(); }
+      }
+    };
+    document.addEventListener("keydown", onKey);
+    const overflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => { document.removeEventListener("keydown", onKey); document.body.style.overflow = overflow; previous?.focus(); };
+  }, [menu, isMobile]);
   useEffect(() => {
     if (toast) {
       const t = setTimeout(() => setToast(""), 5000);
@@ -462,47 +522,42 @@ function Shell() {
         Skip to content
       </a>
       <div className={menu ? "shell menu-expanded" : "shell"}>
-        <aside aria-label="Workspace navigation" className={menu ? "sidebar open" : "sidebar"}>
+        <aside id="workspace-navigation" aria-label="Workspace navigation" className={menu ? "sidebar open" : "sidebar"}>
+          <button className="icon-button drawer-close" aria-label="Close navigation drawer" onClick={() => setMenu(false)}><X size={20} /></button>
           <Link to={base + "/dashboard"} aria-label="PATAG overview">
             <Logo />
           </Link>
           <div className="workspace">
             <span className="workspace-avatar">{admin ? "LG" : "RC"}</span>
             <div>
-              <strong>{admin ? "Malolos demo LGU" : "Road Crew Alpha"}</strong>
+              <strong>{admin ? data.settings?.agency || "Malolos demo LGU" : data.teams.find(t=>t.id===data.user.teamId)?.name || "Maintenance"}</strong>
               <small>
                 {admin ? "City engineering office" : "Maintenance workspace"}
               </small>
             </div>
           </div>
-          <p className="nav-label">Workspace</p>
           <nav aria-label="Main navigation">
-            {navigation.map(([path, label, Icon]) => (
-              <NavLink key={String(path)} title={String(label)} aria-label={String(label)} to={base + "/" + path}>
-                <Icon size={18} />
-                <span>{String(label)}</span>
-                {path === "verification" && (
-                  <b>
-                    {
-                      data.reports.filter((r) =>
-                        ["Submitted", "Under Review"].includes(r.status),
-                      ).length
-                    }
-                  </b>
-                )}
-              </NavLink>
-            ))}
+            {(admin ? [
+              ["Overview", ["dashboard", "analytics"]],
+              ["Report management", ["reports", "verification", "duplicates", "map"]],
+              ["Operations", ["assignments", "completions", "teams"]],
+              ["Management", ["users", "exports"]],
+              ["System", ["activity"]],
+            ] : [
+              ["Overview", ["dashboard", "map"]],
+              ["Field operations", ["assignments", "progress", "submissions"]],
+              ["Records", ["history"]],
+            ]).map(([label, paths]) => <Fragment key={String(label)}>
+              <p className="nav-label">{String(label)}</p>
+              {navigation.filter(([path]) => (paths as string[]).includes(String(path))).map(([path, label, Icon]) => (
+                <NavLink key={String(path)} title={String(label)} aria-label={String(label)} to={base + "/" + path}>
+                  <Icon size={18} /><span>{String(label)}</span>
+                  {path === "verification" && <b>{data.reports.filter(r => ["Submitted", "Under Review"].includes(r.status)).length}</b>}
+                </NavLink>
+              ))}
+            </Fragment>)}
           </nav>
           <div className="nav-bottom">
-            <NavLink title="Notifications" aria-label="Notifications" to={base + "/notifications"}>
-              <Bell size={18} />
-              <span className="nav-text">Notifications</span>
-              {localStorage.getItem("patag-notification-preference") !==
-                "off" &&
-                data.notifications.some((n) => !n.read) && (
-                  <span className="unread-dot" />
-                )}
-            </NavLink>
             <NavLink title="Profile and settings" aria-label="Profile and settings" to={base + (admin ? "/settings" : "/profile")}>
               <Settings size={18} />
               <span className="nav-text">{admin ? "Settings" : "Profile & settings"}</span>
@@ -525,9 +580,14 @@ function Shell() {
                 className="icon-button"
                 aria-label="Sign out"
                 onClick={async () => {
-                  await request("/auth/logout", {});
-                  sessionStorage.removeItem("patag-token");
-                  nav(base + "/login");
+                  try {
+                    await request("/auth/logout", {});
+                  } catch {
+                    // Signing out locally still matters when the server can't be reached.
+                  } finally {
+                    sessionStorage.removeItem("patag-token");
+                    nav(base + "/login");
+                  }
                 }}
               >
                 <LogOut size={17} />
@@ -535,24 +595,29 @@ function Shell() {
             </div>
           </div>
         </aside>
+        {menu && <button className="drawer-backdrop" aria-label="Close navigation overlay" onClick={() => setMenu(false)} />}
         <div className="workspace-main">
           <div className="topbar">
             <button
               className="icon-button mobile-menu"
               aria-label={menu ? "Close navigation" : "Open navigation"}
               aria-expanded={menu}
-              onClick={() => setMenu(!menu)}
+              aria-controls="workspace-navigation"
+              onClick={() => { setMenu(!menu); if (window.innerWidth >= 1024) localStorage.setItem("patag-sidebar", menu ? "collapsed" : "expanded"); }}
             >
               {menu ? <X size={22} /> : <Menu size={22} />}
             </button>
             <Link className="topbar-brand" to={base + '/dashboard'} aria-label="PATAG home"><Logo /></Link>
             <nav className="topnav" aria-label="Primary workspace">
-              {(admin ? [['dashboard','Overview'],['reports','Reports'],['assignments','Assignments'],['analytics','Analytics']] : [['dashboard','Overview'],['assignments','My tasks'],['map','Task map'],['history','History']]).map(([path,label])=><NavLink key={path} to={base+'/'+path}>{label}</NavLink>)}
+              {(admin ? [['dashboard','Overview'],['reports','Reports'],['assignments','Operations'],['users','User management']] : [['dashboard','Overview'],['assignments','My tasks'],['map','Task map'],['history','History']]).map(([path,label])=><NavLink key={path} to={base+'/'+path}>{label}</NavLink>)}
             </nav>
-            <span className="workspace-caption">{admin ? 'Malolos · LGU' : 'Road Crew Alpha'}</span>
-            <Link to={base + "/notifications"} className="notification-link">
+            <span className="workspace-caption">{admin ? (data.settings?.city || 'Malolos') + ' · LGU' : data.teams.find(t=>t.id===data.user.teamId)?.name || 'Maintenance'}</span>
+            <button className="icon-button theme-toggle" onClick={toggleTheme} aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"} title={theme === "dark" ? "Light mode" : "Dark mode"}>
+              {theme === "dark" ? <Sun size={19} /> : <Moon size={19} />}
+            </button>
+            <Link to={base + "/notifications"} className="notification-link" aria-label={"Notifications" + (data.notifications.some(n => !n.read) ? ", unread updates" : "")}>
               <Bell size={18} />
-              <span>Activity</span>
+              {localStorage.getItem("patag-notification-preference") !== "off" && data.notifications.some(n => !n.read) && <i className="unread-dot" />}
             </Link>
           </div>
           <main id="main">
@@ -738,27 +803,16 @@ function Chart({
       : kind === "area"
         ? [...new Set(reports.map((r) => r.location.barangay))]
         : kind === "time"
-          ? [
-              "09",
-              "10",
-              "11",
-              "12",
-              "13",
-              "14",
-              "15",
-              "16",
-              "17",
-              "18",
-              "19",
-              "20",
-              "21",
-            ]
+          ? [...new Set(reports.map((r) => localDay(r.createdAt)))].sort().slice(-14)
           : statuses;
   const series = groups.map((name) => ({
-    name: kind === "time" ? "Oct " + name : name,
+    name:
+      kind === "time"
+        ? new Date(name + "T00:00:00").toLocaleDateString("en-PH", { month: "short", day: "numeric" })
+        : name,
     total: reports.filter((r) =>
       kind === "time"
-        ? r.createdAt.slice(8, 10) === name
+        ? localDay(r.createdAt) === name
         : kind === "area"
           ? r.location.barangay === name
           : kind === "severity"
@@ -777,17 +831,17 @@ function Chart({
           data={series}
           margin={{ top: 12, right: 8, left: -26, bottom: 0 }}
         >
-          <CartesianGrid vertical={false} stroke="#e9e6e2" />
+          <CartesianGrid vertical={false} stroke="var(--line)" />
           <XAxis
             dataKey="name"
-            tick={{ fontSize: 11, fill: "#5f6874" }}
+            tick={{ fontSize: 11, fill: "var(--slate)" }}
             axisLine={false}
             tickLine={false}
             interval="preserveStartEnd"
             minTickGap={18}
           />
-          <YAxis allowDecimals={false} axisLine={false} tickLine={false} />
-          <Tooltip cursor={{ fill: "#F7F1EB" }} />
+          <YAxis tick={{ fill: "var(--slate)", fontSize: 11 }} allowDecimals={false} axisLine={false} tickLine={false} />
+          <Tooltip cursor={{ fill: "var(--raised)" }} contentStyle={{ background: "var(--surface)", borderColor: "var(--line)", color: "var(--ink)", borderRadius: 12 }} />
           <Bar
             isAnimationActive={false}
             dataKey="total"
@@ -803,6 +857,11 @@ function Chart({
 }
 function Recenter({ reports }: { reports: Report[] }) {
   const m = useMap();
+  useEffect(() => {
+    const observer = new ResizeObserver(() => m.invalidateSize({ pan: false }));
+    observer.observe(m.getContainer());
+    return () => observer.disconnect();
+  }, [m]);
   return (
     <button
       className="map-recenter"
@@ -992,8 +1051,8 @@ function ReportList({ mode }: { mode: string }) {
         (severity === "All" || r.severity === severity) &&
         (area === "All" || r.location.barangay === area) &&
         (team === "All" || r.teamId === team) &&
-        (!from || r.createdAt.slice(0, 10) >= from) &&
-        (!to || r.createdAt.slice(0, 10) <= to),
+        (!from || localDay(r.createdAt) >= from) &&
+        (!to || localDay(r.createdAt) <= to),
     )
     .sort((a, b) =>
       sort === "road"
@@ -1156,7 +1215,7 @@ function ReportList({ mode }: { mode: string }) {
                       <td>
                         <Link className="table-identity" to={link(r)}>
                           <img
-                            src={asset(r.photos[0]?.url)}
+                            src={asset(r.photos[0]?.url || "/demo-evidence.svg")}
                             alt="Evidence preview"
                           />
                           <span>
@@ -1268,12 +1327,16 @@ function Details({ mode = "detail" }: { mode?: string }) {
       () => sessionStorage.getItem("repair-notes-" + id) || "",
     ),
     [nearby, setNearby] = useState<{ report: Report; distance: number }[]>([]);
+  const dupKey = r
+    ? [r.id, r.location.road, r.location.coordinates.lat, r.location.coordinates.lng].join("|")
+    : "";
   useEffect(() => {
     if (r)
       void request<{ report: Report; distance: number }[]>("/duplicates", r)
         .then(setNearby)
         .catch(() => setNearby([]));
-  }, [r]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dupKey]);
   if (!r)
     return (
       <Empty
@@ -1288,14 +1351,16 @@ function Details({ mode = "detail" }: { mode?: string }) {
     setError("");
     const f = new FormData(e.currentTarget);
     try {
-      await event(r.id, decision, {
-        note: f.get("note"),
-        teamId: f.get("teamId"),
-        priority: f.get("priority"),
-        targetDate: f.get("targetDate"),
-        duplicateOf: f.get("duplicateOf"),
-        jurisdiction: f.get("jurisdiction"),
-      });
+      const fields = ["note", "teamId", "priority", "targetDate", "duplicateOf", "jurisdiction"];
+      await event(
+        r.id,
+        decision,
+        Object.fromEntries(
+          fields
+            .map((k) => [k, f.get(k)] as const)
+            .filter(([, v]) => typeof v === "string" && v.trim() !== ""),
+        ),
+      );
       setDecision("");
     } catch (e) {
       setError((e as Error).message);
@@ -1321,6 +1386,19 @@ function Details({ mode = "detail" }: { mode?: string }) {
     } finally {
       setBusy(false);
     }
+  };
+  const pickBefore = async (files: FileList | null) => {
+    if (!files?.length) return;
+    setBusy(true);
+    setError("");
+    try {
+      const evidence: Photo[] = [];
+      for (const file of Array.from(files)) evidence.push(await upload(file, "before"));
+      await event(r.id, "before-photos", { photos: evidence, note: "Maintenance before-repair evidence added." });
+      notify("Before-repair evidence saved.");
+    } catch (error) {
+      setError((error as Error).message);
+    } finally { setBusy(false); }
   };
   const pick = async (files: FileList | null) => {
     if (!files) return;
@@ -1377,6 +1455,19 @@ function Details({ mode = "detail" }: { mode?: string }) {
             aside={<Badge value={r.severity} />}
           >
             <Gallery photos={r.photos} label="Before repair" />
+            {admin && <div className="notice" style={{display:"block"}}>
+              <strong>Public photo visibility</strong>
+              <p>Review all before-and-after images for faces, plates and personal details before allowing them on the community map. New evidence requires a new review.</p>
+              <button className="button" disabled={busy} onClick={() => void direct("publication",{approved:!r.publicPhotosApproved,note:r.publicPhotosApproved?"Public photos hidden.":"Photos reviewed and approved for public display."})}>{r.publicPhotosApproved ? "Hide public photos" : "Approve public photos"}</button>
+            </div>}
+            {!admin && ["Assigned", "In Progress"].includes(r.status) && r.completion?.state !== "Awaiting Verification" && (
+              <label className="upload">
+                <Camera size={20} />
+                <strong>Add before-repair photos</strong>
+                <span>Document the site before work. Original citizen evidence is kept.</span>
+                <input type="file" accept="image/png,image/jpeg,image/webp" multiple disabled={busy} aria-label="Before-repair photos" onChange={(e) => { void pickBefore(e.target.files); e.target.value = ""; }} />
+              </label>
+            )}
             <h3>{r.title}</h3>
             <p>{r.description}</p>
             <dl className="detail-list">
@@ -1444,7 +1535,7 @@ function Details({ mode = "detail" }: { mode?: string }) {
                   <label className="upload">
                     <Camera size={22} />
                     <strong>Add after-repair photos</strong>
-                    <span>PNG, JPEG or WebP · up to 8 MB per photo</span>
+                    <span>PNG, JPEG or WebP · up to 3.5 MB per photo</span>
                     <input
                       aria-label="After-repair photos"
                       type="file"
@@ -1541,7 +1632,7 @@ function Details({ mode = "detail" }: { mode?: string }) {
                       </strong>
                       <p>{h.note || h.action}</p>
                       <small>
-                        {date(h.at)} · {h.actor}
+                        {dateTime(h.at)} · {actorLabel(h)}
                       </small>
                     </div>
                   </li>
@@ -1797,7 +1888,7 @@ function Details({ mode = "detail" }: { mode?: string }) {
                   <input
                     type="date"
                     name="targetDate"
-                    min={new Date().toISOString().slice(0, 10)}
+                    min={localDay(new Date())}
                   />
                 </label>
               </>
@@ -1941,21 +2032,25 @@ function Duplicates() {
   const [pairs, setPairs] = useState<
     { a: Report; b: Report; distance: number }[]
   >([]);
+  const pending = data.reports.filter((r) =>
+    ["Submitted", "Under Review"].includes(r.status),
+  );
+  const pendingKey = pending.map((r) => r.id + ":" + r.status).join(",");
   useEffect(() => {
-    void Promise.all(
-      data.reports
-        .filter((r) => ["Submitted", "Under Review"].includes(r.status))
-        .map(async (a) => {
-          const list = await request<{ report: Report; distance: number }[]>(
-            "/duplicates",
-            a,
-          );
-          return list.map((x) => ({ a, b: x.report, distance: x.distance }));
-        }),
-    )
-      .then((x) => setPairs(x.flat()))
-      .catch(() => setPairs([]));
-  }, [data.reports]);
+    // allSettled: one failed check must not blank the whole list.
+    void Promise.allSettled(
+      pending.map(async (a) => {
+        const list = await request<{ report: Report; distance: number }[]>(
+          "/duplicates",
+          a,
+        );
+        return list.map((x) => ({ a, b: x.report, distance: x.distance }));
+      }),
+    ).then((results) =>
+      setPairs(results.flatMap((x) => (x.status === "fulfilled" ? x.value : []))),
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pendingKey]);
   return (
     <>
       <Header
@@ -2000,14 +2095,17 @@ function Duplicates() {
   );
 }
 function Teams() {
-  const { data } = useData();
+  const { data, refresh, notify } = useData();
   const { id } = useParams();
   const [q, setQ] = useState("");
+  const [editing, setEditing] = useState<Team | null>(null);
+  const [error, setError] = useState("");
   return (
     <>
       <Header
         title={id ? "Maintenance team" : "Maintenance teams"}
-        description="Crew workload derives from current report assignments."
+        description="Create crews, manage availability and review assigned work."
+        action={<button className="primary" onClick={() => {setError("");setEditing({id:"",name:"",members:[],active:true});}}>Add team <Users size={16}/></button>}
       />
       <label className="search">
         <Search size={16} />
@@ -2031,7 +2129,8 @@ function Teams() {
               title={t.name}
               aside={<Badge value={t.active ? "Active" : "Inactive"} />}
             >
-              <p>{t.members.join(" · ")}</p>
+              <p>{t.members.join(" · ") || "No active members yet. Assign accounts from User management."}</p>
+              <button className="button" onClick={() => {setError("");setEditing(t);}}>Edit team</button>
               <dl className="detail-list">
                 <div>
                   <dt>Open tasks</dt>
@@ -2070,6 +2169,15 @@ function Teams() {
             </Panel>
           ))}
       </div>
+      {editing && <Modal title={editing.id ? "Edit maintenance team" : "Add maintenance team"} close={() => setEditing(null)}>
+        <form onSubmit={async(e) => {e.preventDefault();const f=new FormData(e.currentTarget);try{await request("/teams",{id:editing.id,name:f.get("name"),active:f.get("active")==="true"},editing.id?"PATCH":"POST");await refresh();setEditing(null);notify("Team saved.");}catch(e){setError((e as Error).message);}}}>
+          <label>Team name<input name="name" defaultValue={editing.name} required maxLength={100}/></label>
+          <label>Availability<select name="active" defaultValue={String(editing.active)}><option value="true">Active</option><option value="false">Inactive</option></select></label>
+          <p>Members are linked through User accounts. Finish open tasks and move active members before deactivating a team.</p>
+          {error && <p className="error" role="alert">{error}</p>}
+          <button className="primary">Save team <Check size={16}/></button>
+        </form>
+      </Modal>}
     </>
   );
 }
@@ -2079,12 +2187,61 @@ function UsersPage() {
   const [q, setQ] = useState(""),
     [filter, setFilter] = useState("All"),
     [selected, setSelected] = useState<User | null>(null),
+    [deleting, setDeleting] = useState<User | null>(null),
+    [showPw, setShowPw] = useState(false),
     [error, setError] = useState("");
+  const emptyDraft = {
+    name: "",
+    email: "",
+    password: "",
+    teamId: "",
+    role: "citizen" as User["role"],
+    active: true,
+  };
+  const [draft, setDraft] = useState(emptyDraft);
+
+  const openAdd = () => {
+    setError("");
+    setShowPw(false);
+    setSelected({
+      id: "",
+      name: draft.name,
+      email: draft.email,
+      role: draft.role,
+      teamId: draft.teamId || undefined,
+      active: draft.active,
+    });
+  };
+
+  const openEdit = (u: User) => {
+    setError("");
+    setShowPw(false);
+    setSelected(u);
+  };
+
+  const isValidPassword = (pw: string) =>
+    [...pw].length >= 8 &&
+    [...pw].length <= 128 &&
+    /[a-z]/.test(pw) &&
+    /[A-Z]/.test(pw) &&
+    /[0-9]/.test(pw) &&
+    /[^A-Za-z0-9]/.test(pw);
+
   return (
     <>
+      {id && (
+        <Link className="back-link" to={base + "/users"}>
+          <ArrowLeft size={16} /> All user accounts
+        </Link>
+      )}
       <Header
         title={id ? "User details" : "User accounts"}
-        description="Local demonstration accounts. Production access requires server-managed invitations and authorization."
+        description="Create, update, manage roles, assign teams, or delete workspace accounts."
+        action={
+          <button className="primary" onClick={openAdd}>
+            Add account <Users size={16} />
+          </button>
+        }
       />
       <div className="filters">
         <label className="search">
@@ -2115,6 +2272,7 @@ function UsersPage() {
                 <th>Name</th>
                 <th>Email</th>
                 <th>Role</th>
+                <th>Team</th>
                 <th>Account status</th>
                 <th>Action</th>
               </tr>
@@ -2137,15 +2295,29 @@ function UsersPage() {
                     <td>{u.email}</td>
                     <td>{u.role}</td>
                     <td>
+                      {data.teams.find((t) => t.id === u.teamId)?.name || "—"}
+                    </td>
+                    <td>
                       <Badge value={u.active ? "Active" : "Inactive"} />
                     </td>
                     <td>
-                      <button
-                        disabled={u.id === data.user.id}
-                        onClick={() => setSelected(u)}
-                      >
-                        Manage
-                      </button>
+                      <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+                        <button
+                          disabled={u.id === data.user.id}
+                          onClick={() => openEdit(u)}
+                        >
+                          Manage
+                        </button>
+                        <button
+                          disabled={u.id === data.user.id}
+                          onClick={() => {
+                            setError("");
+                            setDeleting(u);
+                          }}
+                        >
+                          Delete
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -2155,34 +2327,159 @@ function UsersPage() {
       </Panel>
       {selected && (
         <Modal
-          title={"Manage " + selected.name}
+          title={selected.id ? "Manage " + selected.name : "Add account"}
           close={() => setSelected(null)}
         >
           <form
+            key={selected.id || "add-account"}
             onSubmit={async (e) => {
               e.preventDefault();
+              setError("");
               const f = new FormData(e.currentTarget);
+              const name = String(f.get("name") || "").trim();
+              const email = String(f.get("email") || "").trim();
+              const password = String(f.get("password") || "");
+              const teamId = String(f.get("teamId") || "");
+              const selectedRole = String(f.get("role") || "citizen");
+              const active = f.get("active") === "true";
+
+              if (!selected.id || password.length > 0) {
+                if (!isValidPassword(password)) {
+                  setError(
+                    "Password must be at least 8 characters and include lowercase, uppercase, number, and special character.",
+                  );
+                  return;
+                }
+              }
+
               try {
                 await request(
                   "/users",
                   {
                     id: selected.id,
-                    role: f.get("role"),
-                    active: f.get("active") === "true",
+                    name,
+                    email,
+                    ...(password ? { password } : {}),
+                    teamId,
+                    role: selectedRole,
+                    active,
                   },
-                  "PATCH",
+                  selected.id ? "PATCH" : "POST",
                 );
                 await refresh();
+                if (!selected.id) setDraft(emptyDraft);
                 setSelected(null);
-                notify("Account updated.");
+                notify(selected.id ? "Account updated." : "Account created.");
               } catch (e) {
                 setError((e as Error).message);
               }
             }}
           >
             <label>
+              Full name
+              <input
+                name="name"
+                required
+                maxLength={100}
+                autoComplete="name"
+                defaultValue={selected.id ? selected.name : draft.name}
+                onChange={(e) => {
+                  if (!selected.id)
+                    setDraft((d) => ({ ...d, name: e.target.value }));
+                }}
+              />
+            </label>
+            <label>
+              Email address
+              <input
+                name="email"
+                type="email"
+                required
+                maxLength={254}
+                autoComplete="off"
+                defaultValue={selected.id ? selected.email : draft.email}
+                onChange={(e) => {
+                  if (!selected.id)
+                    setDraft((d) => ({ ...d, email: e.target.value }));
+                }}
+              />
+            </label>
+            <label className="password-label">
+              {selected.id
+                ? "New password (leave blank to keep current)"
+                : "Temporary demo password"}
+              <div className="password-wrap">
+                <input
+                  name="password"
+                  type={showPw ? "text" : "password"}
+                  minLength={8}
+                  maxLength={128}
+                  required={!selected.id}
+                  autoComplete="new-password"
+                  placeholder={
+                    selected.id
+                      ? "Leave blank to keep existing password"
+                      : "Min. 8 chars (Aa1!)"
+                  }
+                  defaultValue={selected.id ? "" : draft.password}
+                  onChange={(e) => {
+                    if (!selected.id)
+                      setDraft((d) => ({ ...d, password: e.target.value }));
+                  }}
+                />
+                <button
+                  type="button"
+                  className="password-toggle-btn"
+                  onMouseDown={(e) => e.preventDefault()}
+                  aria-label={showPw ? "Hide password" : "Show password"}
+                  aria-pressed={showPw}
+                  onClick={() => setShowPw(!showPw)}
+                >
+                  {showPw ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+              </div>
+            </label>
+            <p>
+              Requires at least 8 characters including uppercase, lowercase,
+              number, and special character.
+            </p>
+            <label>
+              Maintenance team
+              <select
+                name="teamId"
+                aria-label="Maintenance team"
+                defaultValue={
+                  selected.id ? selected.teamId || "" : draft.teamId
+                }
+                onChange={(e) => {
+                  if (!selected.id)
+                    setDraft((d) => ({ ...d, teamId: e.target.value }));
+                }}
+              >
+                <option value="">Not assigned</option>
+                {data.teams
+                  .filter((t) => t.active)
+                  .map((t) => (
+                    <option key={t.id} value={t.id}>
+                      {t.name}
+                    </option>
+                  ))}
+              </select>
+            </label>
+            <label>
               Role
-              <select name="role" defaultValue={selected.role}>
+              <select
+                name="role"
+                aria-label="Role"
+                defaultValue={selected.id ? selected.role : draft.role}
+                onChange={(e) => {
+                  if (!selected.id)
+                    setDraft((d) => ({
+                      ...d,
+                      role: e.target.value as User["role"],
+                    }));
+                }}
+              >
                 <option>citizen</option>
                 <option>maintenance</option>
                 <option>admin</option>
@@ -2190,7 +2487,19 @@ function UsersPage() {
             </label>
             <label>
               Account status
-              <select name="active" defaultValue={String(selected.active)}>
+              <select
+                name="active"
+                defaultValue={String(
+                  selected.id ? selected.active : draft.active,
+                )}
+                onChange={(e) => {
+                  if (!selected.id)
+                    setDraft((d) => ({
+                      ...d,
+                      active: e.target.value === "true",
+                    }));
+                }}
+              >
                 <option value="true">Active</option>
                 <option value="false">Inactive</option>
               </select>
@@ -2204,8 +2513,73 @@ function UsersPage() {
               Changing roles or deactivating access takes effect on the next API
               request.
             </p>
-            <button className="primary">Confirm account changes</button>
+            <div className="dialog-actions" style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+              <button className="primary" type="submit">
+                Confirm account changes
+              </button>
+              {selected.id && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    const target = selected;
+                    setSelected(null);
+                    setError("");
+                    setDeleting(target);
+                  }}
+                >
+                  Delete account
+                </button>
+              )}
+              {!selected.id && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setDraft(emptyDraft);
+                    setSelected(null);
+                  }}
+                >
+                  Cancel & clear
+                </button>
+              )}
+            </div>
           </form>
+        </Modal>
+      )}
+      {deleting && (
+        <Modal
+          title={"Delete " + deleting.name}
+          close={() => setDeleting(null)}
+        >
+          <p>
+            Are you sure you want to permanently delete the account for{" "}
+            <strong>{deleting.name}</strong> ({deleting.email})?
+          </p>
+          {error && (
+            <p role="alert" className="error">
+              {error}
+            </p>
+          )}
+          <div className="dialog-actions" style={{ display: "flex", gap: "8px", marginTop: "16px" }}>
+            <button
+              className="primary"
+              type="button"
+              onClick={async () => {
+                try {
+                  await request("/users", { id: deleting.id }, "DELETE");
+                  await refresh();
+                  setDeleting(null);
+                  notify("Account deleted.");
+                } catch (e) {
+                  setError((e as Error).message);
+                }
+              }}
+            >
+              Confirm delete
+            </button>
+            <button type="button" onClick={() => setDeleting(null)}>
+              Cancel
+            </button>
+          </div>
         </Modal>
       )}
     </>
@@ -2311,8 +2685,8 @@ function Exports() {
       (status === "All" || r.status === status) &&
       (severity === "All" || r.severity === severity) &&
       (area === "All" || r.location.barangay === area) &&
-      (!from || r.createdAt.slice(0, 10) >= from) &&
-      (!to || r.createdAt.slice(0, 10) <= to),
+      (!from || localDay(r.createdAt) >= from) &&
+      (!to || localDay(r.createdAt) <= to),
   );
   function value(r: Report, f: string) {
     return (
@@ -2322,7 +2696,7 @@ function Exports() {
         Barangay: r.location.barangay,
         Severity: r.severity,
         Status: r.status,
-        Submitted: r.createdAt.slice(0, 10),
+        Submitted: localDay(r.createdAt),
       }[f] || ""
     );
   }
@@ -2501,7 +2875,7 @@ function Exports() {
   );
 }
 function Notifications() {
-  const { data, refresh } = useData();
+  const { data, refresh, notify } = useData();
   return (
     <>
       <Header
@@ -2510,8 +2884,12 @@ function Notifications() {
         action={
           <button
             onClick={async () => {
-              await request("/notifications/read", { id: "all" });
-              await refresh();
+              try {
+                await request("/notifications/read", { id: "all" });
+                await refresh();
+              } catch (e) {
+                notify((e as Error).message);
+              }
             }}
           >
             Mark all as read
@@ -2530,8 +2908,12 @@ function Notifications() {
               <Link
                 to={base + (admin ? "/reports/" : "/assignments/") + n.reportId}
                 onClick={async () => {
-                  await request("/notifications/read", { id: n.id });
-                  await refresh();
+                  try {
+                    await request("/notifications/read", { id: n.id });
+                    await refresh();
+                  } catch (e) {
+                    notify((e as Error).message);
+                  }
                 }}
               >
                 <strong>{n.title}</strong>
@@ -2558,7 +2940,7 @@ function Activity() {
   const entries = data.reports
     .flatMap((r) => r.history.map((h) => ({ ...h, reportId: r.id })))
     .filter((h) =>
-      (h.reportId + " " + h.actor + " " + h.action + " " + h.note)
+      (h.reportId + " " + actorLabel(h) + " " + h.action + " " + h.note)
         .toLowerCase()
         .includes(q.toLowerCase()),
     )
@@ -2599,14 +2981,14 @@ function Activity() {
                       {h.reportId}
                     </Link>
                   </td>
-                  <td>{h.actor}</td>
+                  <td>{actorLabel(h)}</td>
                   <td>
                     {h.action}
                     <small className="sub-state">{h.note}</small>
                   </td>
                   <td>{h.from || "—"}</td>
                   <td>{h.to}</td>
-                  <td className="numeric">{date(h.at)}</td>
+                  <td className="numeric">{dateTime(h.at)}</td>
                 </tr>
               ))}
             </tbody>
@@ -2616,7 +2998,9 @@ function Activity() {
     </>
   );
 }
+
 function SettingsPage() {
+  const navigate = useNavigate();
   const { data, refresh, notify } = useData();
   const [error, setError] = useState(""),
     [enabled, setEnabled] = useState(
@@ -2628,6 +3012,8 @@ function SettingsPage() {
         title={admin ? "Workspace settings" : "Profile & settings"}
         description="Profile and preferences for this demonstration workspace."
       />
+
+      <button className="button" onClick={async()=>{try{await request('/auth/logout',{});}finally{sessionStorage.removeItem('patag-token');navigate(base+'/login',{replace:true});}}}>Log out</button>
       <section className="settings-row">
         <div>
           <h2>Your profile</h2>
@@ -2661,12 +3047,13 @@ function SettingsPage() {
               name="email"
               type="email"
               defaultValue={data.user.email}
+              readOnly
               required
             />
           </label>
           <p>
             Role: {data.user.role}
-            {!admin ? " · Road Crew Alpha" : ""}
+            {!admin ? " · " + (data.teams.find(t=>t.id===data.user.teamId)?.name || "No team") : ""}
           </p>
           {error && (
             <p className="error" role="alert">
@@ -2711,17 +3098,14 @@ function SettingsPage() {
           <div>
             <h2>Agency & jurisdiction</h2>
             <p>
-              Local workspace label only. Reports may be forwarded individually
-              to the responsible agency.
+              Shared by all roles in this workspace. New reports use this agency; existing reports keep their assigned jurisdiction.
             </p>
           </div>
           <form
             className="panel"
-            onSubmit={(e) => {
-              e.preventDefault();
-              const f = new FormData(e.currentTarget);
-              localStorage.setItem("patag-agency", String(f.get("agency")));
-              notify("Local agency preference saved.");
+            onSubmit={async(e) => {
+              e.preventDefault();const f=new FormData(e.currentTarget);
+              try {await request("/settings",{agency:f.get("agency"),city:f.get("city"),province:f.get("province")},"PATCH");await refresh();notify("Workspace settings saved.");setError("");}catch(e){setError((e as Error).message);}
             }}
           >
             <label>
@@ -2729,13 +3113,15 @@ function SettingsPage() {
               <input
                 name="agency"
                 defaultValue={
-                  localStorage.getItem("patag-agency") ||
-                  "Malolos demo jurisdiction"
+                  data.settings?.agency || "Malolos demo jurisdiction"
                 }
                 required
               />
             </label>
-            <button>Save local preference</button>
+            <label>City<input name="city" defaultValue={data.settings?.city || "Malolos"} required/></label>
+            <label>Province<input name="province" defaultValue={data.settings?.province || "Bulacan"} required/></label>
+            {error && <p className="error" role="alert">{error}</p>}
+            <button className="primary">Save workspace settings</button>
             <Link className="back-link" to={base + "/users"}>
               Manage user accounts
               <ArrowRight size={16} />
