@@ -1,3 +1,5 @@
+// Vercel detects Fastify only when the entrypoint imports the framework directly.
+import 'fastify';
 import { buildApp } from './http-app.ts';
 import { SupabaseBlobStore } from './blobs.ts';
 import { config, createPool, lanUrls, requireEnv } from './config.ts';
