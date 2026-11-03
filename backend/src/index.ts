@@ -18,14 +18,20 @@ const app = buildApp({
   geocode: createGeocoder({ token: config.mapboxToken, log: m => console.warn(m) }),
 });
 
-await app.listen({ port: config.port, host: config.host });
-if (config.host === '0.0.0.0') {
-  console.log(`PATAG API listening on all interfaces, port ${config.port}`);
-  console.log('  This PC / Android emulator: http://127.0.0.1:%d/api  (emulator: http://10.0.2.2:%d/api)', config.port, config.port);
-  for (const url of lanUrls(config.port)) console.log(`  Phones on the same Wi-Fi:   ${url}`);
-} else {
-  console.log(`PATAG API http://${config.host}:${config.port}/api`);
-}
+// Vercel finishes server binding after the entrypoint import completes.
+app.listen({ port: config.port, host: config.host }).then(() => {
+  if (config.host === '0.0.0.0') {
+    console.log(`PATAG API listening on all interfaces, port ${config.port}`);
+    console.log('  This PC / Android emulator: http://127.0.0.1:%d/api  (emulator: http://10.0.2.2:%d/api)', config.port, config.port);
+    for (const url of lanUrls(config.port)) console.log(`  Phones on the same Wi-Fi:   ${url}`);
+  } else {
+    console.log(`PATAG API http://${config.host}:${config.port}/api`);
+  }
+
+}).catch(err => {
+  app.log.error(err);
+  process.exit(1);
+});
 
 for (const signal of ['SIGINT', 'SIGTERM'] as const) {
   process.once(signal, async () => { await app.close(); await db.close(); process.exit(0); });
