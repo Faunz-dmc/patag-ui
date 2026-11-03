@@ -13,3 +13,10 @@ test('configured Fastify entrypoint satisfies Vercel framework detection', async
   const detector = /(?:from|require|import)\s*(?:\(\s*)?["']fastify["']\s*(?:\))?/;
   assert.match(source, detector);
 });
+
+test('backend runtime stays on the verified Node 24 major', async () => {
+  const pkg = JSON.parse(await readFile(new URL('../package.json', import.meta.url), 'utf8'));
+  const lock = JSON.parse(await readFile(new URL('../package-lock.json', import.meta.url), 'utf8'));
+  assert.equal(pkg.engines.node, '24.x');
+  assert.equal(lock.packages[''].engines.node, pkg.engines.node);
+});
